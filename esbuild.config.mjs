@@ -1,5 +1,6 @@
 import esbuild from "esbuild";
 import process from "process";
+import { sassPlugin } from 'esbuild-sass-plugin';
 
 const banner = 
 `/*
@@ -14,14 +15,19 @@ esbuild.build({
     banner: {
         js: banner,
     },
-    entryPoints: ['main.ts'],
+    entryPoints: ['src/main.ts', 'src/styles.scss'],
     bundle: true,
     external: ['obsidian'],
     format: 'cjs',
+    outdir: '.',
+    oubase: 'src',
     watch: !prod,
     target: 'es2016',
     logLevel: "info",
     sourcemap: prod ? false : 'inline',
+    minify: prod,
     treeShaking: true,
-    outfile: 'main.js',
+    plugins: [
+        sassPlugin({cache: !prod})
+    ]
 }).catch(() => process.exit(1));
