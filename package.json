@@ -1,34 +1,34 @@
 {
-	"name": "obsidian-sample-plugin",
-	"version": "0.12.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
-	"main": "main.js",
-	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "node esbuild.config.mjs production",
-		"prepare": "husky install"
-	},
-	"keywords": [],
-	"author": "",
-	"license": "MIT",
-	"devDependencies": {
-		"@types/node": "^16.11.1",
-		"@typescript-eslint/eslint-plugin": "^5.2.0",
-		"@typescript-eslint/parser": "^5.2.0",
-		"esbuild": "0.13.8",
-		"esbuild-sass-plugin": "^1.7.0",
-		"eslint": "^8.1.0",
-		"eslint-config-prettier": "^8.3.0",
-		"husky": "^7.0.4",
-		"lint-staged": "^11.2.6",
-		"obsidian": "^0.12.17",
-		"prettier": "^2.4.1",
-		"sass": "^1.43.4",
-		"tslib": "2.3.1",
-		"typescript": "4.4.4"
-	},
-	"lint-staged": {
-		"*.ts": "eslint --cache --fix",
-		"*.{ts,scss}": "prettier --write"
-	}
+  "name": "obsidian-sample-plugin",
+  "version": "0.12.0",
+  "description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production",
+    "prepare": "husky install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^16.11.1",
+    "@typescript-eslint/eslint-plugin": "^5.2.0",
+    "@typescript-eslint/parser": "^5.2.0",
+    "esbuild": "0.13.8",
+    "esbuild-sass-plugin": "^1.7.0",
+    "eslint": "^8.1.0",
+    "eslint-config-prettier": "^8.3.0",
+    "husky": "^7.0.4",
+    "lint-staged": "^11.2.6",
+    "obsidian": "^0.12.17",
+    "prettier": "^2.4.1",
+    "sass": "^1.43.4",
+    "tslib": "2.3.1",
+    "typescript": "4.4.4"
+  },
+  "lint-staged": {
+    "*.ts": "eslint --cache --fix",
+    "*.{ts,scss}": "prettier --write"
+  }
 }
