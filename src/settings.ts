@@ -9,6 +9,8 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
 
   display(): void {
     this.containerEl.empty();
+
+    // Render title and description
     this.containerEl.createEl('h2', { text: 'Auto Class settings.' });
     this.containerEl.createEl('p', {
       text: 'Input a folder path in the first column and a set of css classes (comma separated), into the second column. In preview mode, the classes will automatically be applied to all notes that are children of that folder.'
@@ -16,12 +18,12 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     this.containerEl.createEl('p', {
       text: "Combine this with CSS snippets that target the classes you configure here to automatically apply styles based on a note's path."
     });
+
     this.renderPathTable(this.containerEl, this.plugin.settings);
   }
 
   private renderPathTable(parent: HTMLElement, settings: AutoClassPluginSettings): void {
     const table = parent.createEl('table', { cls: 'auto-class-settings__table' });
-    // Create header
     this.renderTableHeader(table.createTHead());
     this.renderTableBody(table.createTBody(), settings.paths);
   }

@@ -1,12 +1,7 @@
 import { MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
-import { AutoClassPluginSettings } from './interfaces';
+import { AutoClassPluginSettings, ViewAppliedClasses } from './interfaces';
 import { AutoClassPluginSettingsTab } from './settings';
-
-interface ViewAppliedClasses {
-  view: MarkdownView;
-  classes: string[];
-}
 
 export class AutoClassPlugin extends Plugin {
   appliedClasses: ViewAppliedClasses[] = [];
@@ -20,7 +15,7 @@ export class AutoClassPlugin extends Plugin {
   }
 
   onunload() {
-    // pass
+    this.removeAllClasses();
   }
 
   handleLayoutChange(): void {
@@ -65,5 +60,14 @@ export class AutoClassPlugin extends Plugin {
       });
       this.appliedClasses = newApplied;
     }
+  }
+
+  private removeAllClasses() {
+    this.appliedClasses.forEach((applied) => {
+      const container = applied.view?.contentEl.querySelector('.markdown-preview-view');
+      if (container) {
+        container.removeClasses(applied.classes);
+      }
+    });
   }
 }
