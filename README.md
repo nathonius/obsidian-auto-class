@@ -6,7 +6,7 @@ An Obsidian plugin to automatically apply CSS classes to the markdown preview vi
 
 Classes are applied based on a note's path. In settings, configure a folder path and the classes to apply to the children of that folder.
 
-![[doc/screenshot.png]]
+![AutoClass](doc/screenshot.png)
 
 Once configured, the next time the view is updated the classes will be applied.
 

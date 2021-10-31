@@ -1,10 +1,10 @@
 {
   "id": "auto-class",
   "name": "Auto Class",
-  "version": "1.0.1",
-  "minAppVersion": "0.12.0",
-  "description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-  "author": "Obsidian",
-  "authorUrl": "https://obsidian.md",
+  "version": "1.0.0",
+  "minAppVersion": "0.12.12",
+  "description": "Automatically apply CSS classes to the markdown preview view based on a note's path.",
+  "author": "OfficerHalf",
+  "authorUrl": "https://nathan-smith.org",
   "isDesktopOnly": false
 }

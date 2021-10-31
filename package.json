@@ -1,7 +1,7 @@
 {
-  "name": "obsidian-sample-plugin",
-  "version": "0.12.0",
-  "description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+  "name": "auto-class",
+  "version": "1.0.0",
+  "description": "Automatically apply CSS classes to the markdown preview view based on a note's path.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
@@ -9,7 +9,14 @@
     "prepare": "husky install"
   },
   "keywords": [],
-  "author": "",
+  "author": {
+    "name": "OfficerHalf",
+    "url": "https://nathan-smith.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OfficerHalf/obsidian-auto-class/"
+  },
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^16.11.1",
@@ -21,7 +28,7 @@
     "eslint-config-prettier": "^8.3.0",
     "husky": "^7.0.4",
     "lint-staged": "^11.2.6",
-    "obsidian": "^0.12.17",
+    "obsidian": "^0.12.12",
     "prettier": "^2.4.1",
     "sass": "^1.43.4",
     "tslib": "2.3.1",
