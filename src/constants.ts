@@ -1,5 +1,7 @@
 import { AutoClassPluginSettings } from './interfaces';
 
 export const DEFAULT_SETTINGS: AutoClassPluginSettings = {
-  paths: {}
+  paths: {
+    'Example Path/Subfolder/': 'example-class'
+  }
 };

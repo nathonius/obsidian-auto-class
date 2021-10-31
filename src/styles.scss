@@ -1,0 +1,38 @@
+.auto-class-settings {
+  &__table {
+    width: 100%;
+    th {
+      text-align: left;
+    }
+  }
+  &__table-row {
+    td {
+      padding-top: 6px;
+      padding-bottom: 4px;
+      overflow-wrap: anywhere;
+    }
+  }
+  &__input-row {
+    border-bottom: 1px solid var(--background-modifier-border);
+    input {
+      width: 150px;
+      background-color: transparent;
+      border: 0;
+      padding: 0;
+      &:hover {
+        background-color: transparent;
+      }
+    }
+  }
+  &__class-cell {
+    font-family: var(--font-monospace);
+  }
+  &__button-cell {
+    text-align: right;
+    button {
+      min-width: 5rem;
+      padding: 6px 10px;
+      margin: 0;
+    }
+  }
+}

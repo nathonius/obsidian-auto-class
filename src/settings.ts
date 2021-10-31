@@ -9,34 +9,18 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
 
   display(): void {
     this.containerEl.empty();
-    this.renderNewPath(this.containerEl);
+    this.containerEl.createEl('h2', { text: 'Auto Class settings.' });
+    this.containerEl.createEl('p', {
+      text: 'Input a folder path in the first column and a set of css classes (comma separated), into the second column. In preview mode, the classes will automatically be applied to all notes that are children of that folder.'
+    });
+    this.containerEl.createEl('p', {
+      text: "Combine this with CSS snippets that target the classes you configure here to automatically apply styles based on a note's path."
+    });
     this.renderPathTable(this.containerEl, this.plugin.settings);
   }
 
-  private renderNewPath(parent: HTMLElement): void {
-    const inputContainer = parent.createDiv();
-    const pathInput = inputContainer.createEl('input', { attr: { type: 'text', id: 'pathInput' } });
-    pathInput.placeholder = 'Folder/Subfolder/ChildFolder';
-    inputContainer.createEl('label', { text: 'Folder path', attr: { for: 'pathInput' } });
-    const classInput = inputContainer.createEl('input', { attr: { type: 'text', id: 'classInput' } });
-    classInput.placeholder = 'class1, class2, class3';
-    inputContainer.createEl('label', { text: 'Classes', attr: { for: 'classInput' } });
-    const saveButton = parent.createEl('button', { text: 'Save path', cls: 'mod-cta' });
-    saveButton.addEventListener('click', async () => {
-      if (pathInput.value && classInput.value) {
-        // Normalize path to end with a slash
-        if (!pathInput.value.endsWith('/')) {
-          pathInput.value = `${pathInput.value}/`;
-        }
-        this.plugin.settings.paths[pathInput.value] = classInput.value;
-        await this.plugin.saveSettings();
-        this.display();
-      }
-    });
-  }
-
   private renderPathTable(parent: HTMLElement, settings: AutoClassPluginSettings): void {
-    const table = parent.createEl('table');
+    const table = parent.createEl('table', { cls: 'auto-class-settings__table' });
     // Create header
     this.renderTableHeader(table.createTHead());
     this.renderTableBody(table.createTBody(), settings.paths);
@@ -50,12 +34,42 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   }
 
   private renderTableBody(tbody: HTMLTableSectionElement, paths: Record<string, string>) {
+    this.renderNewPathRow(tbody);
     Object.keys(paths).forEach((key) => {
-      const row = tbody.insertRow();
+      const row = tbody.createEl('tr', { cls: 'auto-class-settings__table-row' });
       row.createEl('td', { text: key });
-      row.createEl('td', { text: paths[key] });
-      const deleteCell = row.createEl('td', { text: 'X' });
-      deleteCell.addEventListener('click', () => this.deletePath(key));
+      row.createEl('td', { text: paths[key], cls: 'auto-class-settings__class-cell' });
+      const deleteCell = row.createEl('td', { cls: 'auto-class-settings__button-cell' });
+      const deleteButton = deleteCell.createEl('button', { text: 'Delete' });
+      deleteButton.addEventListener('click', () => this.deletePath(key));
+    });
+  }
+
+  private renderNewPathRow(tbody: HTMLTableSectionElement): void {
+    const inputRow = tbody.createEl('tr', {
+      cls: ['auto-class-settings__table-row', 'auto-class-settings__input-row']
+    });
+    const pathCell = inputRow.createEl('td');
+    const pathInput = pathCell.createEl('input', {
+      attr: { placeholder: 'Folder', type: 'text' }
+    });
+
+    const classCell = inputRow.createEl('td');
+    const classInput = classCell.createEl('input', { attr: { placeholder: 'class1, class2', type: 'text' } });
+
+    const addCell = inputRow.createEl('td', { cls: 'auto-class-settings__button-cell' });
+    const addButton = addCell.createEl('button', { cls: 'mod-cta', text: 'Add' });
+
+    addButton.addEventListener('click', async () => {
+      if (pathInput.value && classInput.value) {
+        // Normalize path to end with a slash
+        if (!pathInput.value.endsWith('/')) {
+          pathInput.value = `${pathInput.value}/`;
+        }
+        this.plugin.settings.paths[pathInput.value] = classInput.value;
+        await this.plugin.saveSettings();
+        this.display();
+      }
     });
   }
 
