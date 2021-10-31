@@ -20,7 +20,7 @@ esbuild
     external: ['obsidian'],
     format: 'cjs',
     outdir: '.',
-    oubase: 'src',
+    outbase: 'src',
     watch: !prod,
     target: 'es2016',
     logLevel: 'info',
