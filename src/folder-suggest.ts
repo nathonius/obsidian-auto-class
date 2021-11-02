@@ -1,9 +1,11 @@
 import { App, FuzzySuggestModal, TFolder } from 'obsidian';
 
 export class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
+  items: TFolder[] = [];
+  callback: (folder: TFolder) => void | undefined;
   selectedFolder: TFolder | null = null;
 
-  constructor(app: App, private readonly input: HTMLInputElement, private readonly items: TFolder[]) {
+  constructor(app: App) {
     super(app);
   }
 
@@ -16,8 +18,9 @@ export class FolderSuggestModal extends FuzzySuggestModal<TFolder> {
   }
 
   onChooseItem(item: TFolder): void {
-    this.input.value = item.path;
-    this.selectedFolder = item;
+    if (this.callback) {
+      this.callback(item);
+    }
     this.close();
   }
 }

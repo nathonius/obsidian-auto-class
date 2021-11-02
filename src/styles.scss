@@ -13,9 +13,12 @@
     }
   }
   &__input-row {
-    border-bottom: 1px solid var(--background-modifier-border);
+    box-shadow: 0px 1px var(--background-modifier-border);
+  }
+  &__flex-container {
+    display: flex;
     input {
-      width: 150px;
+      flex-grow: 1;
       background-color: transparent;
       border: 0;
       padding: 0;

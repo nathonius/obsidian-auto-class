@@ -1,8 +1,11 @@
-import { App, PluginSettingTab } from 'obsidian';
+import { App, PluginSettingTab, setIcon, TFolder } from 'obsidian';
+import { FolderSuggestModal } from './folder-suggest';
 import { AutoClassPluginSettings } from './interfaces';
 import { AutoClassPlugin } from './plugin';
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
+  private readonly folderSuggestModal: FolderSuggestModal = new FolderSuggestModal(this.app);
+
   constructor(readonly app: App, private readonly plugin: AutoClassPlugin) {
     super(app, plugin);
   }
@@ -52,12 +55,28 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       cls: ['auto-class-settings__table-row', 'auto-class-settings__input-row']
     });
     const pathCell = inputRow.createEl('td');
-    const pathInput = pathCell.createEl('input', {
+    const pathCellFlexContainer = pathCell.createDiv({ cls: 'auto-class-settings__flex-container' });
+    const pathButton = pathCellFlexContainer.createEl('button', { cls: 'auto-class-settings__input-button' });
+    setIcon(pathButton, 'folder');
+    const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
+    pathButton.addEventListener('click', () => {
+      this.folderSuggestModal.selectedFolder = null;
+      this.folderSuggestModal.items = folders;
+      this.folderSuggestModal.callback = (folder: TFolder) => {
+        pathInput.value = folder.path;
+      };
+      this.folderSuggestModal.open();
+    });
+    // const pathInputContainer = pathCell.createDiv();
+    const pathInput = pathCellFlexContainer.createEl('input', {
       attr: { placeholder: 'Folder', type: 'text' }
     });
 
     const classCell = inputRow.createEl('td');
-    const classInput = classCell.createEl('input', { attr: { placeholder: 'class1, class2', type: 'text' } });
+    const classCellFlexContainer = classCell.createDiv({ cls: 'auto-class-settings__flex-container' });
+    const classInput = classCellFlexContainer.createEl('input', {
+      attr: { placeholder: 'class1, class2', type: 'text' }
+    });
 
     const addCell = inputRow.createEl('td', { cls: 'auto-class-settings__button-cell' });
     const addButton = addCell.createEl('button', { cls: 'mod-cta', text: 'Add' });
