@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, setIcon, TFolder } from 'obsidian';
 import { FolderSuggestModal } from './folder-suggest';
-import { AutoClassPluginSettings } from './interfaces';
+import { AutoClassPluginSettings, ClassPath } from './interfaces';
 import { AutoClassPlugin } from './plugin';
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
@@ -38,15 +38,15 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     headerRow.createEl('th');
   }
 
-  private renderTableBody(tbody: HTMLTableSectionElement, paths: Record<string, string>) {
+  private renderTableBody(tbody: HTMLTableSectionElement, paths: ClassPath[]) {
     this.renderNewPathRow(tbody);
-    Object.keys(paths).forEach((key) => {
+    paths.forEach((path) => {
       const row = tbody.createEl('tr', { cls: 'auto-class-settings__table-row' });
-      row.createEl('td', { text: key });
-      row.createEl('td', { text: paths[key], cls: 'auto-class-settings__class-cell' });
+      row.createEl('td', { text: path.path });
+      row.createEl('td', { text: path.classes.join(', '), cls: 'auto-class-settings__class-cell' });
       const deleteCell = row.createEl('td', { cls: 'auto-class-settings__button-cell' });
       const deleteButton = deleteCell.createEl('button', { text: 'Delete' });
-      deleteButton.addEventListener('click', () => this.deletePath(key));
+      deleteButton.addEventListener('click', () => this.deletePath(path));
     });
   }
 
@@ -87,15 +87,19 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
         if (!pathInput.value.endsWith('/')) {
           pathInput.value = `${pathInput.value}/`;
         }
-        this.plugin.settings.paths[pathInput.value] = classInput.value;
+        this.plugin.settings.paths.unshift({
+          path: pathInput.value,
+          classes: this.plugin.getClassList(classInput.value)
+        });
         await this.plugin.saveSettings();
         this.display();
       }
     });
   }
 
-  private deletePath(key: string): void {
-    delete this.plugin.settings.paths[key];
+  private async deletePath(classPath: ClassPath): Promise<void> {
+    this.plugin.settings.paths.remove(classPath);
+    await this.plugin.saveSettings();
     this.display();
   }
 }

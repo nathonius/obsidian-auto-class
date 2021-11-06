@@ -1,7 +1,13 @@
 import { MarkdownView } from 'obsidian';
 
 export interface AutoClassPluginSettings {
-  paths: Record<string, string>;
+  paths: ClassPath[];
+  version: string;
+}
+
+export interface ClassPath {
+  path: string;
+  classes: string[];
 }
 
 export interface ViewAppliedClasses {

@@ -1,6 +1,7 @@
 import { MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
-import { AutoClassPluginSettings, ViewAppliedClasses } from './interfaces';
+import { AutoClassPluginSettings, ClassPath, ViewAppliedClasses } from './interfaces';
+import { migrate } from './migrations';
 import { AutoClassPluginSettingsTab } from './settings';
 
 export class AutoClassPlugin extends Plugin {
@@ -9,6 +10,7 @@ export class AutoClassPlugin extends Plugin {
   async onload() {
     const savedData = await this.loadData();
     this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData);
+    await migrate(this);
 
     this.addSettingTab(new AutoClassPluginSettingsTab(this.app, this));
     this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
@@ -22,11 +24,8 @@ export class AutoClassPlugin extends Plugin {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (activeView && this.isPreivewMode(activeView)) {
       this.removePreviousClasses(activeView);
-      const paths = Object.keys(this.settings.paths);
-      const matches: string[] = paths.filter((path) => activeView.file.path.startsWith(path));
-      const classes: string[] = matches.flatMap((match) =>
-        this.settings.paths[match].split(',').map((cls) => cls.trim())
-      );
+      const matches: ClassPath[] = this.settings.paths.filter((path) => activeView.file.path.startsWith(path.path));
+      const classes: string[] = matches.flatMap((match) => match.classes);
       this.applyPreviewClasses(classes, activeView);
       this.appliedClasses.push({ view: activeView, classes });
     }
@@ -34,6 +33,10 @@ export class AutoClassPlugin extends Plugin {
 
   saveSettings(): Promise<void> {
     return this.saveData(this.settings);
+  }
+
+  getClassList(classString: string): string[] {
+    return classString.split(',').map((cls) => cls.trim());
   }
 
   private isPreivewMode(view: MarkdownView): boolean {
