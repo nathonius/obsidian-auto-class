@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, setIcon, TFolder } from 'obsidian';
+import { ClassPathScope } from './enum';
 import { FolderSuggestModal } from './folder-suggest';
-import { AutoClassPluginSettings } from './interfaces';
+import { AutoClassPluginSettings, ClassPath } from './interfaces';
 import { AutoClassPlugin } from './plugin';
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
@@ -35,18 +36,20 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     const headerRow = thead.insertRow();
     headerRow.createEl('th', { text: 'Path' });
     headerRow.createEl('th', { text: 'Classes' });
+    headerRow.createEl('th', { text: 'Scope' });
     headerRow.createEl('th');
   }
 
-  private renderTableBody(tbody: HTMLTableSectionElement, paths: Record<string, string>) {
+  private renderTableBody(tbody: HTMLTableSectionElement, paths: ClassPath[]) {
     this.renderNewPathRow(tbody);
-    Object.keys(paths).forEach((key) => {
+    paths.forEach((path) => {
       const row = tbody.createEl('tr', { cls: 'auto-class-settings__table-row' });
-      row.createEl('td', { text: key });
-      row.createEl('td', { text: paths[key], cls: 'auto-class-settings__class-cell' });
+      row.createEl('td', { text: path.path });
+      row.createEl('td', { text: path.classes.join(', '), cls: 'auto-class-settings__class-cell' });
+      row.createEl('td', { text: path.scope });
       const deleteCell = row.createEl('td', { cls: 'auto-class-settings__button-cell' });
       const deleteButton = deleteCell.createEl('button', { text: 'Delete' });
-      deleteButton.addEventListener('click', () => this.deletePath(key));
+      deleteButton.addEventListener('click', () => this.deletePath(path));
     });
   }
 
@@ -78,6 +81,16 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       attr: { placeholder: 'class1, class2', type: 'text' }
     });
 
+    const scopeCell = inputRow.createEl('td');
+    const scopeSelect = scopeCell.createEl('select', { cls: 'dropdown' });
+    const previewOption = scopeSelect.createEl('option', {
+      text: ClassPathScope.Preview,
+      attr: { value: ClassPathScope.Preview }
+    });
+    previewOption.selected = true;
+    scopeSelect.createEl('option', { text: ClassPathScope.Edit, attr: { value: ClassPathScope.Edit } });
+    scopeSelect.createEl('option', { text: ClassPathScope.Both, attr: { value: ClassPathScope.Both } });
+
     const addCell = inputRow.createEl('td', { cls: 'auto-class-settings__button-cell' });
     const addButton = addCell.createEl('button', { cls: 'mod-cta', text: 'Add' });
 
@@ -87,15 +100,20 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
         if (!pathInput.value.endsWith('/')) {
           pathInput.value = `${pathInput.value}/`;
         }
-        this.plugin.settings.paths[pathInput.value] = classInput.value;
+        this.plugin.settings.paths.unshift({
+          path: pathInput.value,
+          classes: this.plugin.getClassList(classInput.value),
+          scope: scopeSelect.value as ClassPathScope
+        });
         await this.plugin.saveSettings();
         this.display();
       }
     });
   }
 
-  private deletePath(key: string): void {
-    delete this.plugin.settings.paths[key];
+  private async deletePath(classPath: ClassPath): Promise<void> {
+    this.plugin.settings.paths.remove(classPath);
+    await this.plugin.saveSettings();
     this.display();
   }
 }

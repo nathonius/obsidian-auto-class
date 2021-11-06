@@ -1,7 +1,15 @@
 import { MarkdownView } from 'obsidian';
+import { ClassPathScope } from './enum';
 
 export interface AutoClassPluginSettings {
-  paths: Record<string, string>;
+  paths: ClassPath[];
+  version: string;
+}
+
+export interface ClassPath {
+  path: string;
+  classes: string[];
+  scope: ClassPathScope;
 }
 
 export interface ViewAppliedClasses {
