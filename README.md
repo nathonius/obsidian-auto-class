@@ -1,6 +1,6 @@
 ## Auto Class
 
-An Obsidian plugin to automatically apply CSS classes to the markdown preview view as if you had added them in a `cssClasses` YAML key, based on a note's path. Combine this with CSS snippets targeting a CSS class and you can have different snippets applied to different paths in a single vault without having to add any HTML or CSS classes yourself.
+An Obsidian plugin to automatically apply CSS classes to the markdown view as if you had added them in a `cssClasses` YAML key, based on a note's path. Combine this with CSS snippets targeting a CSS class and you can have different snippets applied to different paths in a single vault without having to add any HTML or CSS classes yourself.
 
 ### Use
 
