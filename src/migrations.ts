@@ -4,7 +4,10 @@ import { ClassPath } from './interfaces';
 import { AutoClassPlugin } from './plugin';
 
 export async function migrate(plugin: AutoClassPlugin): Promise<void> {
-  if (plugin.settings && (!plugin.settings.version || plugin.settings.version !== DEFAULT_SETTINGS.version)) {
+  if (
+    plugin.settings &&
+    (plugin.settings.version !== DEFAULT_SETTINGS.version || !Array.isArray(plugin.settings.paths))
+  ) {
     // Execute migrations
     recordPathsToClassPath(plugin);
 
