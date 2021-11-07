@@ -3,5 +3,5 @@ import { AutoClassPluginSettings } from './interfaces';
 
 export const DEFAULT_SETTINGS: AutoClassPluginSettings = {
   paths: [{ path: 'Example Path/Subfolder/', classes: ['example-class'], scope: ClassPathScope.Preview }],
-  version: '1.2.0'
+  version: '1.2.1'
 };

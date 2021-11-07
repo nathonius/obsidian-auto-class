@@ -1,3 +1,9 @@
+# 1.2.1
+
+## Fixes
+
+- Plugin will now successfully upgrade from 1.1.0 or 1.0.0 to 1.2.0 or higher.
+
 # 1.2.0
 
 ## Features
