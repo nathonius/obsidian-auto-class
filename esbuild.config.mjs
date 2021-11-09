@@ -1,5 +1,7 @@
 import esbuild from 'esbuild';
 import process from 'process';
+import { join } from 'path';
+import { copyFileSync } from 'fs';
 import { sassPlugin } from 'esbuild-sass-plugin';
 
 const banner = `/*
@@ -9,6 +11,22 @@ if you want to view the source visit the plugins github repository
 `;
 
 const prod = process.argv[2] === 'production';
+const vaultPath = process.argv[3];
+
+function devCopy(error) {
+  if (vaultPath && !error) {
+    try {
+      const copyPath = join(vaultPath, '.obsidian/plugins/auto-class');
+      process.stdout.write(`Copying to ${copyPath}...`);
+      copyFileSync('main.js', join(vaultPath, '.obsidian/plugins/auto-class/main.js'));
+      copyFileSync('manifest.json', join(vaultPath, '.obsidian/plugins/auto-class/manifest.json'));
+      copyFileSync('styles.css', join(vaultPath, '.obsidian/plugins/auto-class/styles.css'));
+      process.stdout.write('Done.\n');
+    } catch {
+      process.stdout.write('\n****COULD NOT COPY FILES****\n');
+    }
+  }
+}
 
 esbuild
   .build({
@@ -21,12 +39,17 @@ esbuild
     format: 'cjs',
     outdir: '.',
     outbase: 'src',
-    watch: !prod,
+    watch: !prod ? { onRebuild: devCopy } : false,
     target: 'es2016',
     logLevel: 'info',
     sourcemap: prod ? false : 'inline',
     minify: prod,
     treeShaking: true,
     plugins: [sassPlugin({ cache: !prod })]
+  })
+  .then(() => {
+    if (!prod) {
+      devCopy(false);
+    }
   })
   .catch(() => process.exit(1));

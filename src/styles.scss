@@ -1,40 +1,120 @@
 .auto-class-settings {
-  &__table {
-    width: 100%;
-    th {
-      text-align: left;
+  /* Add new input */
+  &__input-container {
+    display: flex;
+    align-items: center;
+    input {
+      flex-grow: 1;
     }
   }
-  &__table-row {
-    td {
-      padding-top: 6px;
-      padding-bottom: 4px;
-      overflow-wrap: anywhere;
+  &__folder-button {
+    margin-left: 0;
+    margin-right: 8px;
+  }
+  &__add-button {
+    margin-left: 8px;
+    margin-right: 0;
+  }
+
+  /* Path list */
+  &__path-list {
+    list-style: none;
+    padding: 0;
+  }
+  &__path-list-group {
+    padding: initial;
+  }
+  &__path-list-item {
+    display: flex;
+    transition: background-color 150ms ease;
+    padding: 4px;
+    border-radius: 4px;
+    svg {
+      vertical-align: middle;
     }
   }
-  &__input-row {
-    box-shadow: 0px 1px var(--background-modifier-border);
+  &__path-scope {
+    padding: 0px 4px;
+    color: var(--text-faint);
+    background-color: var(--background-secondary-alt);
+    margin-right: 6px;
+    border-radius: 4px;
   }
-  &__flex-container {
+  &__path-list-path {
+    flex-grow: 1;
+  }
+  &__path-list-control {
+    margin-left: 8px;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text-accent-hover);
+    }
+
+    &.auto-class-settings__path-list-drag-handle {
+      cursor: grab;
+    }
+  }
+
+  /* Drag styling */
+  &__drag-target {
+    background-color: var(--interactive-hover);
+  }
+  &__drag-ghost {
+    opacity: 0;
+  }
+}
+
+.auto-class-manage-path {
+  &__modal {
+    min-width: 50vw;
+  }
+  &__input-container {
+    padding: 8px 0;
+    label {
+      display: block;
+      padding: 0 0 4px 1px;
+    }
+  }
+  &__path-input-wrapper {
     display: flex;
     input {
       flex-grow: 1;
-      background-color: transparent;
-      border: 0;
-      padding: 0;
-      &:hover {
-        background-color: transparent;
-      }
     }
   }
-  &__class-cell {
-    font-family: var(--font-monospace);
-  }
-  &__button-cell {
-    text-align: right;
+  &__class-input-wrapper {
+    display: flex;
+    align-items: center;
+    input {
+      flex-grow: 1;
+    }
     button {
-      min-width: 5rem;
-      padding: 6px 10px;
+      margin-left: 12px;
+      margin-right: 0;
+    }
+  }
+  &__class-list {
+    padding: 0;
+  }
+  &__class-list-item {
+    margin-bottom: 8px;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    button {
+      margin: 0;
+    }
+  }
+  &__class-list-control {
+    cursor: pointer;
+    &:hover {
+      color: var(--text-accent-hover);
+    }
+  }
+  &__controls {
+    display: flex;
+    justify-content: flex-end;
+    button:nth-child(2) {
       margin: 0;
     }
   }

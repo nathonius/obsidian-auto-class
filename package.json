@@ -4,7 +4,7 @@
   "description": "Automatically apply CSS classes to the markdown view based on a note's path.",
   "main": "main.js",
   "scripts": {
-    "dev": "node esbuild.config.mjs",
+    "dev": "node esbuild.config.mjs development",
     "build": "node esbuild.config.mjs production",
     "prepare": "husky install"
   },
@@ -20,6 +20,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^16.11.1",
+    "@types/sortablejs": "^1.10.7",
     "@typescript-eslint/eslint-plugin": "^5.2.0",
     "@typescript-eslint/parser": "^5.2.0",
     "esbuild": "0.13.8",
@@ -37,5 +38,8 @@
   "lint-staged": {
     "*.ts": "eslint --cache --fix",
     "*.{ts,scss}": "prettier --write"
+  },
+  "dependencies": {
+    "sortablejs": "^1.14.0"
   }
 }

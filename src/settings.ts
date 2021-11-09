@@ -1,14 +1,18 @@
 import { App, PluginSettingTab, setIcon, TFolder } from 'obsidian';
+import Sortable from 'sortablejs';
 import { ClassPathScope } from './enum';
-import { FolderSuggestModal } from './folder-suggest';
+import { FolderSuggestModal } from './modal/folder-suggest';
+import { ManagePathModal } from './modal/manage-path';
 import { AutoClassPluginSettings, ClassPath } from './interfaces';
 import { AutoClassPlugin } from './plugin';
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
   private readonly folderSuggestModal: FolderSuggestModal = new FolderSuggestModal(this.app);
+  private readonly managePathModal: ManagePathModal = new ManagePathModal(this.plugin);
 
   constructor(readonly app: App, private readonly plugin: AutoClassPlugin) {
     super(app, plugin);
+    this.managePathModal.save = this.editPath.bind(this);
   }
 
   display(): void {
@@ -16,50 +20,19 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
 
     // Render title and description
     this.containerEl.createEl('h2', { text: 'Auto Class settings.' });
+
     this.containerEl.createEl('p', {
-      text: 'Input a folder path in the first column and a set of css classes (comma separated), into the second column. Select the scope for the classes in the third column. In the selected modes, the classes will automatically be applied to all notes that are children of that folder.'
-    });
-    this.containerEl.createEl('p', {
-      text: "Combine this with CSS snippets that target the classes you configure here to automatically apply styles based on a note's path."
+      text: 'Add a folder path and edit it to add CSS classes. Classes are added to the markdown view container in the appropriate scope (edit/source mode, preview mode, or both).'
     });
 
-    this.renderPathTable(this.containerEl, this.plugin.settings);
+    this.renderPathInput(this.containerEl);
+    this.containerEl.createEl('h3', { text: 'Paths' });
+    this.renderPathList(this.containerEl, this.plugin.settings);
   }
 
-  private renderPathTable(parent: HTMLElement, settings: AutoClassPluginSettings): void {
-    const table = parent.createEl('table', { cls: 'auto-class-settings__table' });
-    this.renderTableHeader(table.createTHead());
-    this.renderTableBody(table.createTBody(), settings.paths);
-  }
-
-  private renderTableHeader(thead: HTMLTableSectionElement) {
-    const headerRow = thead.insertRow();
-    headerRow.createEl('th', { text: 'Path' });
-    headerRow.createEl('th', { text: 'Classes' });
-    headerRow.createEl('th', { text: 'Scope' });
-    headerRow.createEl('th');
-  }
-
-  private renderTableBody(tbody: HTMLTableSectionElement, paths: ClassPath[]) {
-    this.renderNewPathRow(tbody);
-    paths.forEach((path) => {
-      const row = tbody.createEl('tr', { cls: 'auto-class-settings__table-row' });
-      row.createEl('td', { text: path.path });
-      row.createEl('td', { text: path.classes.join(', '), cls: 'auto-class-settings__class-cell' });
-      row.createEl('td', { text: path.scope });
-      const deleteCell = row.createEl('td', { cls: 'auto-class-settings__button-cell' });
-      const deleteButton = deleteCell.createEl('button', { text: 'Delete' });
-      deleteButton.addEventListener('click', () => this.deletePath(path));
-    });
-  }
-
-  private renderNewPathRow(tbody: HTMLTableSectionElement): void {
-    const inputRow = tbody.createEl('tr', {
-      cls: ['auto-class-settings__table-row', 'auto-class-settings__input-row']
-    });
-    const pathCell = inputRow.createEl('td');
-    const pathCellFlexContainer = pathCell.createDiv({ cls: 'auto-class-settings__flex-container' });
-    const pathButton = pathCellFlexContainer.createEl('button', { cls: 'auto-class-settings__input-button' });
+  private renderPathInput(parent: HTMLElement): void {
+    const inputContainer = parent.createDiv('auto-class-settings__input-container');
+    const pathButton = inputContainer.createEl('button', { cls: 'auto-class-settings__folder-button' });
     setIcon(pathButton, 'folder');
     const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
     pathButton.addEventListener('click', () => {
@@ -70,50 +43,102 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       };
       this.folderSuggestModal.open();
     });
-    // const pathInputContainer = pathCell.createDiv();
-    const pathInput = pathCellFlexContainer.createEl('input', {
+
+    const pathInput = inputContainer.createEl('input', {
       attr: { placeholder: 'Folder', type: 'text' }
     });
 
-    const classCell = inputRow.createEl('td');
-    const classCellFlexContainer = classCell.createDiv({ cls: 'auto-class-settings__flex-container' });
-    const classInput = classCellFlexContainer.createEl('input', {
-      attr: { placeholder: 'class1, class2', type: 'text' }
+    const addPathButton = inputContainer.createEl('button', {
+      text: 'Add',
+      cls: ['auto-class-settings__add-button', 'mod-cta']
     });
-
-    const scopeCell = inputRow.createEl('td');
-    const scopeSelect = scopeCell.createEl('select', { cls: 'dropdown' });
-    const previewOption = scopeSelect.createEl('option', {
-      text: ClassPathScope.Preview,
-      attr: { value: ClassPathScope.Preview }
-    });
-    previewOption.selected = true;
-    scopeSelect.createEl('option', { text: ClassPathScope.Edit, attr: { value: ClassPathScope.Edit } });
-    scopeSelect.createEl('option', { text: ClassPathScope.Both, attr: { value: ClassPathScope.Both } });
-
-    const addCell = inputRow.createEl('td', { cls: 'auto-class-settings__button-cell' });
-    const addButton = addCell.createEl('button', { cls: 'mod-cta', text: 'Add' });
-
-    addButton.addEventListener('click', async () => {
-      if (pathInput.value && classInput.value) {
-        // Normalize path to end with a slash
-        if (!pathInput.value.endsWith('/')) {
-          pathInput.value = `${pathInput.value}/`;
-        }
-        this.plugin.settings.paths.unshift({
-          path: pathInput.value,
-          classes: this.plugin.getClassList(classInput.value),
-          scope: scopeSelect.value as ClassPathScope
-        });
-        await this.plugin.saveSettings();
-        this.display();
+    addPathButton.addEventListener('click', () => {
+      if (pathInput.value) {
+        this.addPath({ path: pathInput.value, scope: ClassPathScope.Preview, classes: [] });
       }
     });
+  }
+
+  private renderPathList(parent: HTMLElement, settings: AutoClassPluginSettings): void {
+    const list = parent.createEl('ul', { cls: 'auto-class-settings__path-list' });
+    settings.paths.forEach((path) => {
+      this.renderPathListItem(list, path);
+    });
+
+    // Make the list sortable
+    new Sortable(list, {
+      handle: '.auto-class-settings__path-list-drag-handle',
+      group: 'classPaths',
+      animation: 150,
+      chosenClass: 'auto-class-settings__drag-target',
+      dragClass: 'auto-class-settings__drag-ghost',
+      onEnd: (event) => {
+        this.moveClassPath(this.plugin.settings.paths, event.oldIndex, event.newIndex);
+      }
+    });
+  }
+
+  private renderPathListItem(list: HTMLUListElement, path: ClassPath): void {
+    const listItem = list.createEl('li', { cls: 'auto-class-settings__path-list-item' });
+    listItem.createSpan({
+      text: path.scope[0],
+      cls: 'auto-class-settings__path-scope',
+      attr: { 'aria-label': `Scope: ${path.scope}` }
+    });
+    listItem.createSpan({ text: path.path, cls: 'auto-class-settings__path-list-path' });
+    const controls = listItem.createSpan({ cls: 'auto-class-settings__path-list-controls' });
+    const editButton = controls.createSpan({
+      cls: 'auto-class-settings__path-list-control',
+      attr: { 'aria-label': 'Edit', role: 'button' }
+    });
+    setIcon(editButton, 'pencil');
+    editButton.addEventListener('click', () => {
+      this.beginEditPath(path);
+    });
+    const deleteButton = controls.createSpan({
+      cls: 'auto-class-settings__path-list-control',
+      attr: { 'aria-label': 'Delete', role: 'button' }
+    });
+    setIcon(deleteButton, 'trash');
+    deleteButton.addEventListener('click', () => {
+      this.deletePath(path);
+    });
+    const dragHandle = controls.createSpan({
+      cls: ['auto-class-settings__path-list-control', 'auto-class-settings__path-list-drag-handle']
+    });
+    setIcon(dragHandle, 'three-horizontal-bars');
+  }
+
+  private async moveClassPath(paths: ClassPath[], oldIndex: number, newIndex: number): Promise<void> {
+    const newPaths = [...paths];
+    newPaths.splice(newIndex, 0, newPaths.splice(oldIndex, 1)[0]);
+    this.plugin.settings.paths = newPaths;
+    await this.plugin.saveSettings();
+  }
+
+  private beginEditPath(classPath: ClassPath): void {
+    this.managePathModal.classPath = classPath;
+    this.managePathModal.open();
   }
 
   private async deletePath(classPath: ClassPath): Promise<void> {
     this.plugin.settings.paths.remove(classPath);
     await this.plugin.saveSettings();
     this.display();
+  }
+
+  private async addPath(classPath: ClassPath): Promise<void> {
+    this.plugin.settings.paths.unshift(classPath);
+    await this.plugin.saveSettings();
+    this.display();
+  }
+
+  private async editPath(original: ClassPath, updated: ClassPath): Promise<void> {
+    const originalIndex = this.plugin.settings.paths.indexOf(original);
+    if (originalIndex !== -1) {
+      this.plugin.settings.paths[originalIndex] = updated;
+      await this.plugin.saveSettings();
+      this.display();
+    }
   }
 }
