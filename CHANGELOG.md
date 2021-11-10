@@ -1,3 +1,13 @@
+# 1.3.0
+
+## Features
+
+- Support adding classes to linked panes.
+
+## Fixes
+
+- Remove a bunch of extra console logs that got left in.
+
 # 1.2.1
 
 ## Fixes
