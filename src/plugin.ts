@@ -32,7 +32,6 @@ export class AutoClassPlugin extends Plugin {
     if (activeView) {
       // Get any linked views
       let activeViews: MarkdownView[] = [activeView];
-      console.log(activeView);
       const leafGroup = this.app.workspace.getGroupLeaves((activeView.leaf as any).group);
       if (leafGroup) {
         activeViews = leafGroup
