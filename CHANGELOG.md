@@ -1,3 +1,15 @@
+# 1.4.0
+
+## Features
+
+- Revamp settings. Now you can update a path with a new scope, new folder, and add or remove classes.
+- Configured paths can be re-ordered by dragging.
+- Use icons to show the scope of a path.
+
+## Fixes
+
+- Ensure the plugin works for both linked and unlinked panes.
+
 # 1.3.0
 
 ## Features
