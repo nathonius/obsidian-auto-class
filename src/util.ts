@@ -15,3 +15,12 @@ export function isClassPathGroup(pathOrGroup: ClassPath | ClassPathGroup | Class
 export function getClassList(classString: string): string[] {
   return classString.split(',').map((cls) => cls.trim());
 }
+
+/**
+ * Generate a function to create classnames for a component
+ */
+export function className(prefix: string): (cls: string) => string {
+  return (cls: string) => {
+    return `${prefix}__${cls}`;
+  };
+}

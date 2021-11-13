@@ -29,17 +29,8 @@ export class AutoClassPlugin extends Plugin {
    * any linked panes.
    */
   handleLayoutChange(): void {
-    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (activeView) {
-      // Get any linked views
-      let activeViews: MarkdownView[] = [activeView];
-      const leafGroup = this.app.workspace.getGroupLeaves((activeView.leaf as any).group);
-      if (leafGroup && leafGroup.length > 0) {
-        activeViews = leafGroup
-          .map((leaf) => leaf.view)
-          .filter((view) => view instanceof MarkdownView) as MarkdownView[];
-      }
-
+    const activeViews = this.getAllActiveViews();
+    if (activeViews) {
       // Flatten groups into a single array
       const allPaths = this.settings.paths.flatMap((p) => (isClassPathGroup(p) ? p.members : p));
 
@@ -74,6 +65,25 @@ export class AutoClassPlugin extends Plugin {
    */
   saveSettings(): Promise<void> {
     return this.saveData(this.settings);
+  }
+
+  /**
+   * Get the active markdown view and any linked panes.
+   */
+  private getAllActiveViews(): MarkdownView[] | null {
+    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (activeView) {
+      // Get any linked views
+      let activeViews: MarkdownView[] = [activeView];
+      const leafGroup = this.app.workspace.getGroupLeaves((activeView.leaf as any).group);
+      if (leafGroup && leafGroup.length > 0) {
+        activeViews = leafGroup
+          .map((leaf) => leaf.view)
+          .filter((view) => view instanceof MarkdownView) as MarkdownView[];
+      }
+      return activeViews;
+    }
+    return null;
   }
 
   /**

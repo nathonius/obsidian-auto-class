@@ -1,9 +1,11 @@
 import { Modal, setIcon, TFolder } from 'obsidian';
 import { ClassPathScope } from '../enum';
 import { ClassPath } from '../interfaces';
-import { getClassList } from '../util';
+import { className, getClassList } from '../util';
 import { AutoClassPlugin } from '../plugin';
 import { FolderSuggestModal } from './folder-suggest';
+
+const c = className('auto-class-manage-path');
 
 export class ManagePathModal extends Modal {
   readonly folderSuggestModal = new FolderSuggestModal(this.app);
@@ -13,7 +15,7 @@ export class ManagePathModal extends Modal {
 
   constructor(private readonly plugin: AutoClassPlugin) {
     super(plugin.app);
-    this.modalEl.addClass('auto-class-manage-path__modal');
+    this.modalEl.addClass(c('modal'));
   }
 
   onOpen(): void {
@@ -29,12 +31,12 @@ export class ManagePathModal extends Modal {
     this.titleEl.setText('Edit path');
 
     // Render path field
-    const pathInputContainer = this.contentEl.createDiv('auto-class-manage-path__input-container');
+    const pathInputContainer = this.contentEl.createDiv(c('input-container'));
     pathInputContainer.createEl('label', {
       text: 'Target folder',
-      attr: { for: 'auto-class-manage-path__path-input' }
+      attr: { for: c('path-input') }
     });
-    const pathInputWrapper = pathInputContainer.createDiv('auto-class-manage-path__path-input-wrapper');
+    const pathInputWrapper = pathInputContainer.createDiv(c('path-input-wrapper'));
     const pathButton = pathInputWrapper.createEl('button', { attr: { type: 'button', 'aria-label': 'Select folder' } });
     setIcon(pathButton, 'folder');
     const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
@@ -47,19 +49,19 @@ export class ManagePathModal extends Modal {
       this.folderSuggestModal.open();
     });
     const pathInput = pathInputWrapper.createEl('input', {
-      attr: { placeholder: 'Folder', type: 'text', id: 'auto-class-manage-path__path-input' }
+      attr: { placeholder: 'Folder', type: 'text', id: c('path-input') }
     });
     pathInput.value = this.updatedClassPath.path;
 
     // Render scope dropdown
-    const scopeDropdownContainer = this.contentEl.createDiv('auto-class-manage-path__input-container');
+    const scopeDropdownContainer = this.contentEl.createDiv(c('input-container'));
     scopeDropdownContainer.createEl('label', {
       text: 'Class scope',
-      attr: { for: 'auto-class-manage-path__scope-input' }
+      attr: { for: c('scope-input') }
     });
     const scopeSelect = scopeDropdownContainer.createEl('select', {
       cls: 'dropdown',
-      attr: { id: 'auto-class-manage-path__scope-input' }
+      attr: { id: c('scope-input') }
     });
     const previewOption = scopeSelect.createEl('option', {
       text: ClassPathScope.Preview,
@@ -87,14 +89,14 @@ export class ManagePathModal extends Modal {
     });
 
     // Render class input
-    const classInputContainer = this.contentEl.createDiv('auto-class-manage-path__input-container');
+    const classInputContainer = this.contentEl.createDiv(c('input-container'));
     classInputContainer.createEl('label', {
       text: 'New class(es)',
-      attr: { for: 'auto-class-manage-path__class-input' }
+      attr: { for: c('class-input') }
     });
-    const classInputWrapper = classInputContainer.createDiv('auto-class-manage-path__class-input-wrapper');
+    const classInputWrapper = classInputContainer.createDiv(c('class-input-wrapper'));
     const classInput = classInputWrapper.createEl('input', {
-      attr: { placeholder: 'class1, class2', type: 'text', id: 'auto-class-manage-path__class-input' }
+      attr: { placeholder: 'class1, class2', type: 'text', id: c('class-input') }
     });
     const addClassesButton = classInputWrapper.createEl('button', { text: 'Add' });
     addClassesButton.addEventListener('click', () => {
@@ -104,15 +106,15 @@ export class ManagePathModal extends Modal {
     });
 
     // Render classes
-    const classListContainer = this.contentEl.createDiv('auto-class-manage-path__class-list-container');
+    const classListContainer = this.contentEl.createDiv(c('class-list-container'));
     classListContainer.createEl('h3', { text: 'Classes' });
-    const classList = classListContainer.createEl('ul', { cls: 'auto-class-manage-path__class-list' });
+    const classList = classListContainer.createEl('ul', { cls: c('class-list') });
     for (let i = 0; i < this.updatedClassPath.classes.length; i++) {
       const classname = this.updatedClassPath.classes[i];
-      const listItem = classList.createEl('li', { cls: 'auto-class-manage-path__class-list-item' });
+      const listItem = classList.createEl('li', { cls: c('class-list-item') });
       listItem.createSpan({ text: classname });
       const deleteButton = listItem.createEl('span', {
-        cls: 'auto-class-manage-path__class-list-control',
+        cls: c('class-list-control'),
         attr: { 'aria-label': 'Remove Class' }
       });
       setIcon(deleteButton, 'trash');
@@ -125,7 +127,7 @@ export class ManagePathModal extends Modal {
     this.contentEl.createEl('hr');
 
     // Render controls
-    const controlsContainer = this.contentEl.createDiv('auto-class-manage-path__controls');
+    const controlsContainer = this.contentEl.createDiv(c('controls'));
     const saveButton = controlsContainer.createEl('button', { cls: 'mod-cta', text: 'Save', attr: { type: 'button' } });
     saveButton.addEventListener('click', async () => {
       await this.save(this.classPath, this.updatedClassPath);
