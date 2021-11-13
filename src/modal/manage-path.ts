@@ -1,6 +1,7 @@
 import { Modal, setIcon, TFolder } from 'obsidian';
-import { ClassPathScope } from 'src/enum';
-import { ClassPath } from 'src/interfaces';
+import { ClassPathScope } from '../enum';
+import { ClassPath } from '../interfaces';
+import { getClassList } from '../util';
 import { AutoClassPlugin } from '../plugin';
 import { FolderSuggestModal } from './folder-suggest';
 
@@ -137,7 +138,7 @@ export class ManagePathModal extends Modal {
   }
 
   addClasses(classes: string): void {
-    this.updatedClassPath.classes = [...this.plugin.getClassList(classes), ...this.updatedClassPath.classes];
+    this.updatedClassPath.classes = [...getClassList(classes), ...this.updatedClassPath.classes];
     this.display();
   }
 }

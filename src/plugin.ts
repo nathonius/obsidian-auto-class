@@ -1,9 +1,10 @@
 import { MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
 import { ClassPathScope } from './enum';
-import { AutoClassPluginSettings, ClassPath, ViewAppliedClasses, ClassPathGroup } from './interfaces';
+import { AutoClassPluginSettings, ClassPath, ViewAppliedClasses } from './interfaces';
 import { migrate } from './migrations';
-import { AutoClassPluginSettingsTab } from './settings';
+import { AutoClassPluginSettingsTab } from './settings/settings';
+import { isClassPathGroup } from './util';
 
 export class AutoClassPlugin extends Plugin {
   appliedClasses: ViewAppliedClasses[] = [];
@@ -40,7 +41,7 @@ export class AutoClassPlugin extends Plugin {
       }
 
       // Flatten groups into a single array
-      const allPaths = this.settings.paths.flatMap((p) => (this.isClassPathGroup(p) ? p.members : p));
+      const allPaths = this.settings.paths.flatMap((p) => (isClassPathGroup(p) ? p.members : p));
 
       // Remove and apply classes for each applicable view
       activeViews.forEach((view) => {
@@ -73,22 +74,6 @@ export class AutoClassPlugin extends Plugin {
    */
   saveSettings(): Promise<void> {
     return this.saveData(this.settings);
-  }
-
-  /**
-   * Given a string of comma separated classnames,
-   * return them as an array
-   */
-  getClassList(classString: string): string[] {
-    return classString.split(',').map((cls) => cls.trim());
-  }
-
-  isClassPath(pathOrGroup: ClassPath | ClassPathGroup | ClassPath[]): pathOrGroup is ClassPath {
-    return (pathOrGroup as ClassPath).classes && Array.isArray((pathOrGroup as ClassPath).classes);
-  }
-
-  isClassPathGroup(pathOrGroup: ClassPath | ClassPathGroup | ClassPath[]): pathOrGroup is ClassPathGroup {
-    return !this.isClassPath(pathOrGroup);
   }
 
   /**

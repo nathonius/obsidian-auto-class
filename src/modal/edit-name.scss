@@ -1,0 +1,13 @@
+.auto-class-edit-name {
+  &__input {
+    width: 100%;
+  }
+  &__controls {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+    button:nth-child(2) {
+      margin: 0;
+    }
+  }
+}

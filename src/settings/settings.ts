@@ -1,12 +1,13 @@
 import { App, PluginSettingTab, setIcon, TFolder } from 'obsidian';
 import Sortable from 'sortablejs';
-import { ClassPathScope } from './enum';
-import { FolderSuggestModal } from './modal/folder-suggest';
-import { ManagePathModal } from './modal/manage-path';
-import { AutoClassPluginSettings, ClassPath, ClassPathGroup } from './interfaces';
-import { AutoClassPlugin } from './plugin';
-import { ConfirmModal } from './modal/confirm';
-import { EditNameModal } from './modal/edit-name';
+import { ClassPathScope } from '../enum';
+import { FolderSuggestModal } from '../modal/folder-suggest';
+import { ManagePathModal } from '../modal/manage-path';
+import { AutoClassPluginSettings, ClassPath, ClassPathGroup } from '../interfaces';
+import { AutoClassPlugin } from '../plugin';
+import { ConfirmModal } from '../modal/confirm';
+import { EditNameModal } from '../modal/edit-name';
+import { isClassPathGroup } from '../util';
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
   private readonly folderSuggestModal: FolderSuggestModal = new FolderSuggestModal(this.app);
@@ -89,7 +90,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     const list = parent.createEl('ul', { cls: 'auto-class-settings__path-list', attr: { 'data-index': -1 } });
     const sortableLists = [list];
     settings.paths.forEach((path, index) => {
-      if (this.plugin.isClassPathGroup(path)) {
+      if (isClassPathGroup(path)) {
         sortableLists.push(this.renderPathListGroup(list, path, index));
       } else {
         this.renderPathListItem(list, path, index);

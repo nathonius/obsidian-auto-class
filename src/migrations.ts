@@ -2,6 +2,7 @@ import { DEFAULT_SETTINGS } from './constants';
 import { ClassPathScope } from './enum';
 import { ClassPath } from './interfaces';
 import { AutoClassPlugin } from './plugin';
+import { getClassList } from './util';
 
 export async function migrate(plugin: AutoClassPlugin): Promise<void> {
   if (
@@ -30,7 +31,7 @@ function recordPathsToClassPath(plugin: AutoClassPlugin): void {
       const oldPaths = plugin.settings.paths as Record<string, string>;
       const newPaths: ClassPath[] = [];
       Object.keys(oldPaths).forEach((key) => {
-        const classes = plugin.getClassList(oldPaths[key]);
+        const classes = getClassList(oldPaths[key]);
         newPaths.push({ path: key, classes, scope: ClassPathScope.Preview });
       });
       plugin.settings.paths = newPaths;
