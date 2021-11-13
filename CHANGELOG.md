@@ -1,3 +1,9 @@
+# 1.5.0
+
+## Feat
+
+- Add groups of paths to better manage paths.
+
 # 1.4.1
 
 ## Fixes
