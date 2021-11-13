@@ -1,3 +1,9 @@
+# 1.4.1
+
+## Fixes
+
+- Remove some more extra console logs. Added a lint rule so this doesn't happen again. This is what happens when I code instead of going to sleep.
+
 # 1.4.0
 
 ## Features
