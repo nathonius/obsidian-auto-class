@@ -80,11 +80,21 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
 
   private renderPathListItem(list: HTMLUListElement, path: ClassPath): void {
     const listItem = list.createEl('li', { cls: 'auto-class-settings__path-list-item' });
-    listItem.createSpan({
-      text: path.scope[0],
+    const scope = listItem.createSpan({
       cls: 'auto-class-settings__path-scope',
       attr: { 'aria-label': `Scope: ${path.scope}` }
     });
+    switch (path.scope) {
+      case ClassPathScope.Preview:
+        setIcon(scope, 'lines-of-text');
+        break;
+      case ClassPathScope.Edit:
+        setIcon(scope, 'code-glyph');
+        break;
+      case ClassPathScope.Both:
+        setIcon(scope, 'documents');
+        break;
+    }
     listItem.createSpan({ text: path.path, cls: 'auto-class-settings__path-list-path' });
     const controls = listItem.createSpan({ cls: 'auto-class-settings__path-list-controls' });
     const editButton = controls.createSpan({
