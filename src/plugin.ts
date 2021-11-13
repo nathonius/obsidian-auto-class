@@ -28,19 +28,23 @@ export class AutoClassPlugin extends Plugin {
    * any linked panes.
    */
   handleLayoutChange(): void {
+    console.log('HEY');
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (activeView) {
+      console.log(activeView);
       // Get any linked views
       let activeViews: MarkdownView[] = [activeView];
       const leafGroup = this.app.workspace.getGroupLeaves((activeView.leaf as any).group);
-      if (leafGroup) {
+      if (leafGroup && leafGroup.length > 0) {
         activeViews = leafGroup
           .map((leaf) => leaf.view)
           .filter((view) => view instanceof MarkdownView) as MarkdownView[];
       }
+      console.log(activeViews);
 
       // Remove and apply classes for each applicable view
       activeViews.forEach((view) => {
+        console.log(view);
         this.removePreviousClasses(view);
         let matches: ClassPath[] = [];
         let container: Element;
