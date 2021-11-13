@@ -1,7 +1,7 @@
 import { MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
 import { ClassPathScope } from './enum';
-import { AutoClassPluginSettings, ClassPath, ViewAppliedClasses } from './interfaces';
+import { AutoClassPluginSettings, ClassPath, ViewAppliedClasses, ClassPathGroup } from './interfaces';
 import { migrate } from './migrations';
 import { AutoClassPluginSettingsTab } from './settings';
 
@@ -39,20 +39,23 @@ export class AutoClassPlugin extends Plugin {
           .filter((view) => view instanceof MarkdownView) as MarkdownView[];
       }
 
+      // Flatten groups into a single array
+      const allPaths = this.settings.paths.flatMap((p) => (this.isClassPathGroup(p) ? p.members : p));
+
       // Remove and apply classes for each applicable view
       activeViews.forEach((view) => {
         this.removePreviousClasses(view);
         let matches: ClassPath[] = [];
         let container: Element;
         if (this.isPreivewMode(view)) {
-          matches = this.settings.paths.filter(
+          matches = allPaths.filter(
             (path) =>
               (path.scope === ClassPathScope.Preview || path.scope === ClassPathScope.Both) &&
               view.file.path.startsWith(path.path)
           );
           container = this.getPreviewContainer(view);
         } else if (this.isEditMode(view)) {
-          matches = this.settings.paths.filter(
+          matches = allPaths.filter(
             (path) =>
               (path.scope === ClassPathScope.Edit || path.scope === ClassPathScope.Both) &&
               view.file.path.startsWith(path.path)
@@ -78,6 +81,14 @@ export class AutoClassPlugin extends Plugin {
    */
   getClassList(classString: string): string[] {
     return classString.split(',').map((cls) => cls.trim());
+  }
+
+  isClassPath(pathOrGroup: ClassPath | ClassPathGroup | ClassPath[]): pathOrGroup is ClassPath {
+    return (pathOrGroup as ClassPath).classes && Array.isArray((pathOrGroup as ClassPath).classes);
+  }
+
+  isClassPathGroup(pathOrGroup: ClassPath | ClassPathGroup | ClassPath[]): pathOrGroup is ClassPathGroup {
+    return !this.isClassPath(pathOrGroup);
   }
 
   /**

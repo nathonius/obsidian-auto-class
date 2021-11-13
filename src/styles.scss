@@ -6,6 +6,7 @@
     input {
       flex-grow: 1;
     }
+    margin-bottom: 8px;
   }
   &__folder-button {
     margin-left: 0;
@@ -20,14 +21,41 @@
   &__path-list {
     list-style: none;
     padding: 0;
+    padding-bottom: 10px;
   }
-  &__path-list-group {
-    padding: initial;
+  &__path-group {
+    min-height: 40px;
+  }
+  &__path-group-header {
+    display: flex;
+    padding: 4px;
+    border-radius: 4px;
+    font-weight: bold;
+    svg {
+      vertical-align: middle;
+    }
+  }
+  &__path-group-collapse-button {
+    cursor: pointer;
+    padding: 0px 4px;
+    color: var(--text-faint);
+    margin-right: 6px;
+  }
+  &__path-group-name {
+    flex-grow: 1;
+  }
+  &__path-group-list {
+    padding-inline-start: 20px;
+    &.collapsed {
+      max-height: 0px;
+      overflow: hidden;
+    }
   }
   &__path-list-item {
     display: flex;
     transition: background-color 150ms ease;
     padding: 4px;
+    margin: 2px 0px;
     border-radius: 4px;
     svg {
       vertical-align: middle;
@@ -110,6 +138,30 @@
     }
   }
   &__controls {
+    display: flex;
+    justify-content: flex-end;
+    button:nth-child(2) {
+      margin: 0;
+    }
+  }
+}
+
+.auto-class-confirm-modal {
+  &__controls {
+    display: flex;
+    justify-content: flex-end;
+    button:nth-child(2) {
+      margin: 0;
+    }
+  }
+}
+
+.auto-class-edit-name {
+  &__input {
+    width: 100%;
+  }
+  &__controls {
+    margin-top: 8px;
     display: flex;
     justify-content: flex-end;
     button:nth-child(2) {
