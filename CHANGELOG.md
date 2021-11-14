@@ -1,3 +1,9 @@
+# 1.5.1
+
+## Fixes
+
+- Restore plugin functionality.
+
 # 1.5.0
 
 ## Feat
