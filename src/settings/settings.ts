@@ -220,12 +220,14 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     const toIndex = parseInt(to.getAttribute('data-index'));
     const fromList =
       fromIndex !== -1 ? (this.plugin.settings.paths[fromIndex] as ClassPathGroup) : this.plugin.settings.paths;
-    const toList =
-      fromIndex === toIndex
-        ? fromList
-        : toIndex !== -1
-        ? (this.plugin.settings.paths[toIndex] as ClassPathGroup)
-        : this.plugin.settings.paths;
+    let toList: ClassPathGroup | (ClassPath | ClassPathGroup)[];
+    if (fromIndex === toIndex) {
+      toList = fromList;
+    } else if (toIndex !== -1) {
+      toList = this.plugin.settings.paths[toIndex] as ClassPathGroup;
+    } else {
+      toList = this.plugin.settings.paths;
+    }
 
     // Remove from old list
     const path = !Array.isArray(fromList) ? fromList.members.splice(oldIndex, 1) : fromList.splice(oldIndex, 1);
