@@ -5,7 +5,7 @@ export function isClassPath(pathOrGroup: ClassPath | ClassPathGroup | ClassPath[
 }
 
 export function isClassPathGroup(pathOrGroup: ClassPath | ClassPathGroup | ClassPath[]): pathOrGroup is ClassPathGroup {
-  return !this.isClassPath(pathOrGroup);
+  return !isClassPath(pathOrGroup);
 }
 
 /**
