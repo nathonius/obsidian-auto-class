@@ -3,7 +3,8 @@ import { DEFAULT_SETTINGS } from './constants';
 import { ClassPathScope } from './enum';
 import { AutoClassPluginSettings, ClassPath, ViewAppliedClasses } from './interfaces';
 import { migrate } from './migrations';
-import { AutoClassPluginSettingsTab } from './settings';
+import { AutoClassPluginSettingsTab } from './settings/settings';
+import { isClassPathGroup } from './util';
 
 export class AutoClassPlugin extends Plugin {
   appliedClasses: ViewAppliedClasses[] = [];
@@ -28,16 +29,10 @@ export class AutoClassPlugin extends Plugin {
    * any linked panes.
    */
   handleLayoutChange(): void {
-    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    if (activeView) {
-      // Get any linked views
-      let activeViews: MarkdownView[] = [activeView];
-      const leafGroup = this.app.workspace.getGroupLeaves((activeView.leaf as any).group);
-      if (leafGroup && leafGroup.length > 0) {
-        activeViews = leafGroup
-          .map((leaf) => leaf.view)
-          .filter((view) => view instanceof MarkdownView) as MarkdownView[];
-      }
+    const activeViews = this.getAllActiveViews();
+    if (activeViews) {
+      // Flatten groups into a single array
+      const allPaths = this.settings.paths.flatMap((p) => (isClassPathGroup(p) ? p.members : p));
 
       // Remove and apply classes for each applicable view
       activeViews.forEach((view) => {
@@ -45,14 +40,14 @@ export class AutoClassPlugin extends Plugin {
         let matches: ClassPath[] = [];
         let container: Element;
         if (this.isPreivewMode(view)) {
-          matches = this.settings.paths.filter(
+          matches = allPaths.filter(
             (path) =>
               (path.scope === ClassPathScope.Preview || path.scope === ClassPathScope.Both) &&
               view.file.path.startsWith(path.path)
           );
           container = this.getPreviewContainer(view);
         } else if (this.isEditMode(view)) {
-          matches = this.settings.paths.filter(
+          matches = allPaths.filter(
             (path) =>
               (path.scope === ClassPathScope.Edit || path.scope === ClassPathScope.Both) &&
               view.file.path.startsWith(path.path)
@@ -73,11 +68,22 @@ export class AutoClassPlugin extends Plugin {
   }
 
   /**
-   * Given a string of comma separated classnames,
-   * return them as an array
+   * Get the active markdown view and any linked panes.
    */
-  getClassList(classString: string): string[] {
-    return classString.split(',').map((cls) => cls.trim());
+  private getAllActiveViews(): MarkdownView[] | null {
+    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (activeView) {
+      // Get any linked views
+      let activeViews: MarkdownView[] = [activeView];
+      const leafGroup = this.app.workspace.getGroupLeaves((activeView.leaf as any).group);
+      if (leafGroup && leafGroup.length > 0) {
+        activeViews = leafGroup
+          .map((leaf) => leaf.view)
+          .filter((view) => view instanceof MarkdownView) as MarkdownView[];
+      }
+      return activeViews;
+    }
+    return null;
   }
 
   /**

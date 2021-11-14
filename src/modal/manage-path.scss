@@ -1,0 +1,54 @@
+.auto-class-manage-path {
+  &__modal {
+    min-width: 50vw;
+  }
+  &__input-container {
+    padding: 8px 0;
+    label {
+      display: block;
+      padding: 0 0 4px 1px;
+    }
+  }
+  &__path-input-wrapper {
+    display: flex;
+    input {
+      flex-grow: 1;
+    }
+  }
+  &__class-input-wrapper {
+    display: flex;
+    align-items: center;
+    input {
+      flex-grow: 1;
+    }
+    button {
+      margin-left: 12px;
+      margin-right: 0;
+    }
+  }
+  &__class-list {
+    padding: 0;
+  }
+  &__class-list-item {
+    margin-bottom: 8px;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    button {
+      margin: 0;
+    }
+  }
+  &__class-list-control {
+    cursor: pointer;
+    &:hover {
+      color: var(--text-accent-hover);
+    }
+  }
+  &__controls {
+    display: flex;
+    justify-content: flex-end;
+    button:nth-child(2) {
+      margin: 0;
+    }
+  }
+}

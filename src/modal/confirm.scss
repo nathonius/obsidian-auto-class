@@ -1,0 +1,9 @@
+.auto-class-confirm-modal {
+  &__controls {
+    display: flex;
+    justify-content: flex-end;
+    button:nth-child(2) {
+      margin: 0;
+    }
+  }
+}
