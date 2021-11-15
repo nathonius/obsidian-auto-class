@@ -1,6 +1,6 @@
 import { Modal, setIcon, TFolder } from 'obsidian';
 import { ClassPathScope } from '../enum';
-import { ClassPath } from '../interfaces';
+import { ClassPath, ClassPathGroup } from '../interfaces';
 import { className, getClassList } from '../util';
 import { AutoClassPlugin } from '../plugin';
 import { FolderSuggestModal } from './folder-suggest';
@@ -10,8 +10,9 @@ const c = className('auto-class-manage-path');
 export class ManagePathModal extends Modal {
   readonly folderSuggestModal = new FolderSuggestModal(this.app);
   classPath: ClassPath | null = null;
+  group: ClassPathGroup | null = null;
   updatedClassPath: ClassPath | null = null;
-  save: (original: ClassPath, updated: ClassPath) => Promise<void>;
+  save: (original: ClassPath, updated: ClassPath, group: ClassPathGroup | null) => Promise<void>;
 
   constructor(private readonly plugin: AutoClassPlugin) {
     super(plugin.app);
@@ -130,7 +131,7 @@ export class ManagePathModal extends Modal {
     const controlsContainer = this.contentEl.createDiv(c('controls'));
     const saveButton = controlsContainer.createEl('button', { cls: 'mod-cta', text: 'Save', attr: { type: 'button' } });
     saveButton.addEventListener('click', async () => {
-      await this.save(this.classPath, this.updatedClassPath);
+      await this.save(this.classPath, this.updatedClassPath, this.group);
       this.close();
     });
     const cancelButton = controlsContainer.createEl('button', { text: 'Cancel', attr: { type: 'button' } });

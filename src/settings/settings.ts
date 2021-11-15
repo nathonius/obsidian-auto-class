@@ -168,7 +168,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       groupList.addClass('collapsed');
     }
     group.members.forEach((groupPath, index) => {
-      this.renderPathListItem(groupList, groupPath, index);
+      this.renderPathListItem(groupList, groupPath, index, group);
     });
     return groupList;
   }
@@ -176,7 +176,12 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Render a path in the main list or in a group
    */
-  private renderPathListItem(list: HTMLUListElement, path: ClassPath, index: number): void {
+  private renderPathListItem(
+    list: HTMLUListElement,
+    path: ClassPath,
+    index: number,
+    group: ClassPathGroup | null = null
+  ): void {
     const listItem = list.createEl('li', {
       cls: [c('path-list-item'), c('draggable')],
       attr: { 'data-index': index }
@@ -195,7 +200,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     setIcon(editButton, 'pencil');
     editButton.addEventListener('click', () => {
-      this.beginEditPath(path);
+      this.beginEditPath(path, group);
     });
     const deleteButton = controls.createSpan({
       cls: c('path-list-control'),
@@ -243,8 +248,9 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Initialize and open the manage path modal
    */
-  private beginEditPath(classPath: ClassPath): void {
+  private beginEditPath(classPath: ClassPath, group: ClassPathGroup | null = null): void {
     this.managePathModal.classPath = classPath;
+    this.managePathModal.group = group;
     this.managePathModal.open();
   }
 
@@ -269,10 +275,19 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Passed to the edit group modal for saving
    */
-  private async editPath(original: ClassPath, updated: ClassPath): Promise<void> {
-    const originalIndex = this.plugin.settings.paths.indexOf(original);
+  private async editPath(original: ClassPath, updated: ClassPath, group: ClassPathGroup | null = null): Promise<void> {
+    let sourceList = this.plugin.settings.paths;
+    if (group !== null) {
+      const sourceGroup = this.plugin.settings.paths.find((p) => p === group) as ClassPathGroup | undefined;
+      if (sourceGroup) {
+        sourceList = sourceGroup.members;
+      } else {
+        return;
+      }
+    }
+    const originalIndex = sourceList.indexOf(original);
     if (originalIndex !== -1) {
-      this.plugin.settings.paths[originalIndex] = updated;
+      sourceList[originalIndex] = updated;
       await this.plugin.saveSettings();
       this.display();
     }
