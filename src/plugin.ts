@@ -1,13 +1,13 @@
 import { MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
 import { ClassPathScope } from './enum';
-import { AutoClassPluginSettings, ClassPath, ViewAppliedClasses } from './interfaces';
+import { AutoClassPluginSettings, ClassPath } from './interfaces';
 import { migrate } from './migrations';
 import { AutoClassPluginSettingsTab } from './settings/settings';
 import { isClassPathGroup } from './util';
 
 export class AutoClassPlugin extends Plugin {
-  appliedClasses: ViewAppliedClasses[] = [];
+  appliedClasses = new WeakMap<MarkdownView, string[]>();
   settings: AutoClassPluginSettings = DEFAULT_SETTINGS;
 
   async onload() {
@@ -90,14 +90,14 @@ export class AutoClassPlugin extends Plugin {
    * Returns true if a view is in preview mode
    */
   private isPreivewMode(view: MarkdownView): boolean {
-    return (view.currentMode as any).type === 'preview';
+    return view.getMode() === 'preview';
   }
 
   /**
    * Returns true if a view is in edit/source mode
    */
   private isEditMode(view: MarkdownView): boolean {
-    return (view.currentMode as any).type === 'source';
+    return view.getMode() === 'source';
   }
 
   /**
@@ -107,7 +107,7 @@ export class AutoClassPlugin extends Plugin {
    */
   private applyClasses(classes: string[], view: MarkdownView, container: Element): void {
     container.addClasses(classes);
-    this.appliedClasses.push({ view, classes });
+    this.appliedClasses.set(view, classes);
   }
 
   /**
@@ -117,35 +117,31 @@ export class AutoClassPlugin extends Plugin {
   private removePreviousClasses(view: MarkdownView): void {
     const previewContainer = this.getPreviewContainer(view);
     const editContainer = this.getEditContainer(view);
-    const newApplied: ViewAppliedClasses[] = [];
-    this.appliedClasses.forEach((applied) => {
-      if (applied.view !== view) {
-        newApplied.push(applied);
-      } else {
-        if (previewContainer) {
-          previewContainer.removeClasses(applied.classes);
-        }
-        if (editContainer) {
-          editContainer.removeClasses(applied.classes);
-        }
-      }
-    });
-    this.appliedClasses = newApplied;
+    const classes = this.appliedClasses.get(view);
+    if (classes && previewContainer) {
+      previewContainer.removeClasses(classes);
+    }
+    if (classes && editContainer) {
+      editContainer.removeClasses(classes);
+    }
+    this.appliedClasses.delete(view);
   }
 
   /**
    * Remove all applied classes from all views
    */
   private removeAllClasses() {
-    this.appliedClasses.forEach((applied) => {
-      if (applied.view) {
-        const previewContainer = this.getPreviewContainer(applied.view);
-        const editContainer = this.getEditContainer(applied.view);
+    const views = this.app.workspace.getLeavesOfType('markdown').map((leaf) => leaf.view) as MarkdownView[];
+    views.forEach((view) => {
+      const applied = this.appliedClasses.get(view);
+      if (applied) {
+        const previewContainer = this.getPreviewContainer(view);
+        const editContainer = this.getEditContainer(view);
         if (previewContainer) {
-          previewContainer.removeClasses(applied.classes);
+          previewContainer.removeClasses(applied);
         }
         if (editContainer) {
-          editContainer.removeClasses(applied.classes);
+          editContainer.removeClasses(applied);
         }
       }
     });
