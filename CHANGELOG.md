@@ -1,3 +1,9 @@
+# 1.5.3
+
+## Fixes
+
+- Improve handling of removing classes from views; removes a potential memory leak.
+
 # 1.5.2
 
 ## Fixes
