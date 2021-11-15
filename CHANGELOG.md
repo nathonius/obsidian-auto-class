@@ -1,3 +1,9 @@
+# 1.5.2
+
+## Fixes
+
+- Paths in groups can now be edited.
+
 # 1.5.1
 
 ## Fixes
