@@ -131,17 +131,20 @@ export class AutoClassPlugin extends Plugin {
    * Remove all applied classes from all views
    */
   private removeAllClasses() {
-    const views = this.app.workspace.getLeavesOfType('markdown').map((leaf) => leaf.view) as MarkdownView[];
-    views.forEach((view) => {
-      const applied = this.appliedClasses.get(view);
-      if (applied) {
-        const previewContainer = this.getPreviewContainer(view);
-        const editContainer = this.getEditContainer(view);
-        if (previewContainer) {
-          previewContainer.removeClasses(applied);
-        }
-        if (editContainer) {
-          editContainer.removeClasses(applied);
+    const leaves = this.app.workspace.getLeavesOfType('markdown');
+    leaves.forEach((leaf) => {
+      const view = leaf.view;
+      if (view instanceof MarkdownView) {
+        const applied = this.appliedClasses.get(view);
+        if (applied) {
+          const previewContainer = this.getPreviewContainer(view);
+          const editContainer = this.getEditContainer(view);
+          if (previewContainer) {
+            previewContainer.removeClasses(applied);
+          }
+          if (editContainer) {
+            editContainer.removeClasses(applied);
+          }
         }
       }
     });
