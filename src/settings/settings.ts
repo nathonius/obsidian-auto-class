@@ -405,16 +405,22 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * Confirms deletion of the given group and all of its children
    */
   private handleDeleteGroup(group: ClassGroup): void {
-    const responseCallback = (deleteGroup: boolean) => {
-      if (deleteGroup) {
-        this.plugin.settings.paths.remove(group);
-        this.plugin.saveSettings();
-        this.display();
-      }
-      this.confirmModal.close();
-    };
-    this.confirmModal.callback = responseCallback;
-    this.confirmModal.open();
+    if (group.members.length === 0) {
+      this.plugin.settings.paths.remove(group);
+      this.plugin.saveSettings();
+      this.display();
+    } else {
+      const responseCallback = (deleteGroup: boolean) => {
+        if (deleteGroup) {
+          this.plugin.settings.paths.remove(group);
+          this.plugin.saveSettings();
+          this.display();
+        }
+        this.confirmModal.close();
+      };
+      this.confirmModal.callback = responseCallback;
+      this.confirmModal.open();
+    }
   }
 
   /**
