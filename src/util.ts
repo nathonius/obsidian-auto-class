@@ -5,7 +5,7 @@ export function isClassPath(value: ClassPath | ClassTag | ClassGroup): value is 
 }
 
 export function isClassTag(value: ClassPath | ClassTag | ClassGroup): value is ClassTag {
-  return 'class' in value;
+  return 'tag' in value;
 }
 
 export function isClassGroup(value: ClassPath | ClassTag | ClassGroup): value is ClassGroup {
