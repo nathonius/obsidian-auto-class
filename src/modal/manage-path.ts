@@ -1,6 +1,6 @@
 import { Modal, setIcon, TFolder } from 'obsidian';
-import { ClassPathScope } from '../enum';
-import { ClassPath, ClassPathGroup } from '../interfaces';
+import { ClassMatchScope } from '../enum';
+import { ClassPath, ClassGroup } from '../interfaces';
 import { className, getClassList } from '../util';
 import { AutoClassPlugin } from '../plugin';
 import { FolderSuggestModal } from './folder-suggest';
@@ -10,9 +10,9 @@ const c = className('auto-class-manage-path');
 export class ManagePathModal extends Modal {
   readonly folderSuggestModal = new FolderSuggestModal(this.app);
   classPath: ClassPath | null = null;
-  group: ClassPathGroup | null = null;
+  group: ClassGroup | null = null;
   updatedClassPath: ClassPath | null = null;
-  save: (original: ClassPath, updated: ClassPath, group: ClassPathGroup | null) => Promise<void>;
+  save: (original: ClassPath, updated: ClassPath, group: ClassGroup | null) => Promise<void>;
 
   constructor(private readonly plugin: AutoClassPlugin) {
     super(plugin.app);
@@ -65,28 +65,28 @@ export class ManagePathModal extends Modal {
       attr: { id: c('scope-input') }
     });
     const previewOption = scopeSelect.createEl('option', {
-      text: ClassPathScope.Preview,
-      attr: { value: ClassPathScope.Preview }
+      text: ClassMatchScope.Preview,
+      attr: { value: ClassMatchScope.Preview }
     });
-    if (this.updatedClassPath.scope === ClassPathScope.Preview) {
+    if (this.updatedClassPath.scope === ClassMatchScope.Preview) {
       previewOption.selected = true;
     }
     const editOption = scopeSelect.createEl('option', {
-      text: ClassPathScope.Edit,
-      attr: { value: ClassPathScope.Edit }
+      text: ClassMatchScope.Edit,
+      attr: { value: ClassMatchScope.Edit }
     });
-    if (this.updatedClassPath.scope === ClassPathScope.Edit) {
+    if (this.updatedClassPath.scope === ClassMatchScope.Edit) {
       editOption.selected = true;
     }
     const bothOption = scopeSelect.createEl('option', {
-      text: ClassPathScope.Both,
-      attr: { value: ClassPathScope.Both }
+      text: ClassMatchScope.Both,
+      attr: { value: ClassMatchScope.Both }
     });
-    if (this.updatedClassPath.scope === ClassPathScope.Both) {
+    if (this.updatedClassPath.scope === ClassMatchScope.Both) {
       bothOption.selected = true;
     }
     scopeSelect.addEventListener('change', (event: Event) => {
-      this.updatedClassPath.scope = (event.target as HTMLSelectElement).value as ClassPathScope;
+      this.updatedClassPath.scope = (event.target as HTMLSelectElement).value as ClassMatchScope;
     });
 
     // Render class input

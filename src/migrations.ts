@@ -1,5 +1,5 @@
 import { DEFAULT_SETTINGS } from './constants';
-import { ClassPathScope } from './enum';
+import { ClassMatchScope } from './enum';
 import { ClassPath } from './interfaces';
 import { AutoClassPlugin } from './plugin';
 import { getClassList } from './util';
@@ -32,7 +32,7 @@ function recordPathsToClassPath(plugin: AutoClassPlugin): void {
       const newPaths: ClassPath[] = [];
       Object.keys(oldPaths).forEach((key) => {
         const classes = getClassList(oldPaths[key]);
-        newPaths.push({ path: key, classes, scope: ClassPathScope.Preview });
+        newPaths.push({ path: key, classes, scope: ClassMatchScope.Preview });
       });
       plugin.settings.paths = newPaths;
     } catch {

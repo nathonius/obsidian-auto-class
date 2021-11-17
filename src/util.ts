@@ -1,11 +1,15 @@
-import { ClassPath, ClassPathGroup } from './interfaces';
+import { ClassPath, ClassGroup, ClassTag } from './interfaces';
 
-export function isClassPath(pathOrGroup: ClassPath | ClassPathGroup | ClassPath[]): pathOrGroup is ClassPath {
-  return (pathOrGroup as ClassPath).classes && Array.isArray((pathOrGroup as ClassPath).classes);
+export function isClassPath(value: ClassPath | ClassTag | ClassGroup): value is ClassPath {
+  return 'path' in value;
 }
 
-export function isClassPathGroup(pathOrGroup: ClassPath | ClassPathGroup | ClassPath[]): pathOrGroup is ClassPathGroup {
-  return !isClassPath(pathOrGroup);
+export function isClassTag(value: ClassPath | ClassTag | ClassGroup): value is ClassTag {
+  return 'class' in value;
+}
+
+export function isClassGroup(value: ClassPath | ClassTag | ClassGroup): value is ClassGroup {
+  return 'members' in value && 'collapsed' in value;
 }
 
 /**

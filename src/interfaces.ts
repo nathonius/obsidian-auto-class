@@ -1,21 +1,28 @@
 import { MarkdownView } from 'obsidian';
-import { ClassPathScope } from './enum';
+import { ClassMatchScope } from './enum';
 
 export interface AutoClassPluginSettings {
-  paths: Array<ClassPath | ClassPathGroup>;
+  paths: Array<ClassPath | ClassTag | ClassGroup>;
   version: string;
 }
 
-export interface ClassPathGroup {
+export interface ClassGroup {
   name: string;
   members: ClassPath[];
   collapsed: boolean;
 }
 
-export interface ClassPath {
-  path: string;
+export interface ClassMatch {
   classes: string[];
-  scope: ClassPathScope;
+  scope: ClassMatchScope;
+}
+
+export interface ClassPath extends ClassMatch {
+  path: string;
+}
+
+export interface ClassTag extends ClassMatch {
+  tag: string;
 }
 
 export interface ViewAppliedClasses {
