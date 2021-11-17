@@ -1,26 +1,27 @@
 import { App, PluginSettingTab, setIcon, TFolder } from 'obsidian';
 import Sortable from 'sortablejs';
-import { ClassPathScope } from '../enum';
-import { FolderSuggestModal } from '../modal/folder-suggest';
-import { ManagePathModal } from '../modal/manage-path';
-import { AutoClassPluginSettings, ClassPath, ClassPathGroup } from '../interfaces';
+import { ClassMatchScope } from '../enum';
+import { SuggestModal } from '../modal/suggest';
+import { ManageMatchModal } from '../modal/manage-match';
+import { AutoClassPluginSettings, ClassPath, ClassGroup, ClassTag } from '../interfaces';
 import { AutoClassPlugin } from '../plugin';
 import { ConfirmModal } from '../modal/confirm';
 import { EditNameModal } from '../modal/edit-name';
-import { className, isClassPathGroup } from '../util';
+import { className, isClassGroup, isClassPath } from '../util';
 
 const c = className('auto-class-settings');
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
-  private readonly folderSuggestModal: FolderSuggestModal = new FolderSuggestModal(this.app);
-  private readonly managePathModal: ManagePathModal = new ManagePathModal(this.plugin);
+  private readonly folderSuggestModal: SuggestModal = new SuggestModal(this.app);
+  private readonly managePathModal: ManageMatchModal = new ManageMatchModal(this.plugin);
   private readonly confirmModal: ConfirmModal = new ConfirmModal(this.app);
   private readonly editNameModal: EditNameModal = new EditNameModal(this.app);
 
   constructor(readonly app: App, private readonly plugin: AutoClassPlugin) {
     super(app, plugin);
-    this.managePathModal.save = this.editPath.bind(this);
-    this.confirmModal.message = 'Are you sure you want to delete this group? All paths in it will also be deleted.';
+    this.managePathModal.save = this.editMatch.bind(this);
+    this.confirmModal.message =
+      'Are you sure you want to delete this group? All configured paths and tags in it will also be deleted.';
   }
 
   display(): void {
@@ -30,12 +31,13 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     this.containerEl.createEl('h2', { text: 'Auto Class settings.' });
 
     this.containerEl.createEl('p', {
-      text: 'Add a folder path and edit it to add CSS classes. Classes are added to the markdown view container in the appropriate scope (edit/source mode, preview mode, or both). Paths can be grouped for organization.'
+      text: 'Add a folder path or tag and edit it to add CSS classes. Classes are added to the markdown view container in the appropriate scope (edit/source mode, preview mode, or both). Paths and tags can be grouped for organization.'
     });
 
     this.renderPathInput(this.containerEl);
+    this.renderTagInput(this.containerEl);
     this.renderGroupInput(this.containerEl);
-    this.containerEl.createEl('h3', { text: 'Paths' });
+    this.containerEl.createEl('h3', { text: 'Paths & Tags' });
     this.renderPathList(this.containerEl, this.plugin.settings);
   }
 
@@ -58,7 +60,28 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     addPathButton.addEventListener('click', () => {
       if (pathInput.value) {
-        this.addPath({ path: pathInput.value, scope: ClassPathScope.Preview, classes: [] });
+        this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Preview, classes: [] });
+      }
+    });
+  }
+
+  private renderTagInput(parent: HTMLElement): void {
+    const inputContainer = parent.createDiv({ cls: c('input-container') });
+    const tagButton = inputContainer.createEl('button', { cls: c('path-button') });
+    setIcon(tagButton, 'hashtag');
+    tagButton.addEventListener('click', () => this.handleTagButton(tagInput));
+
+    const tagInput = inputContainer.createEl('input', {
+      attr: { placeholder: '#Tag', type: 'text' }
+    });
+
+    const addTagButton = inputContainer.createEl('button', {
+      text: 'Add Tag',
+      cls: [c('add-button'), 'mod-cta']
+    });
+    addTagButton.addEventListener('click', () => {
+      if (tagInput.value) {
+        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Preview, classes: [] });
       }
     });
   }
@@ -86,13 +109,13 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * Render all paths and groups
    */
   private renderPathList(parent: HTMLElement, settings: AutoClassPluginSettings): void {
-    const list = parent.createEl('ul', { cls: c('path-list'), attr: { 'data-index': -1 } });
+    const list = parent.createEl('ul', { cls: c('match-list'), attr: { 'data-index': -1 } });
     const sortableLists = [list];
-    settings.paths.forEach((path, index) => {
-      if (isClassPathGroup(path)) {
-        sortableLists.push(this.renderPathListGroup(list, path, index));
+    settings.matches.forEach((match, index) => {
+      if (isClassGroup(match)) {
+        sortableLists.push(this.renderMatchListGroup(list, match, index));
       } else {
-        this.renderPathListItem(list, path, index);
+        this.renderMatchListItem(list, match, index);
       }
     });
 
@@ -100,16 +123,16 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     sortableLists.forEach((l, index) => {
       new Sortable(l, {
         draggable: `.${c('draggable')}`,
-        handle: `.${c('path-list-drag-handle')}`,
+        handle: `.${c('match-list-drag-handle')}`,
         group: {
           name: index === 0 ? 'root' : 'group',
           put: (to, _, dragEl) => {
-            const isGroup = dragEl.classList.contains(c('path-group'));
+            const isGroup = dragEl.classList.contains(c('match-group'));
             const toName = (to.options.group as Sortable.GroupOptions).name;
             return !isGroup || (isGroup && toName === 'root');
           },
           pull: (_, __, dragEl) => {
-            const isGroup = dragEl.classList.contains(c('path-group'));
+            const isGroup = dragEl.classList.contains(c('match-group'));
             return !isGroup;
           }
         },
@@ -119,7 +142,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
         fallbackOnBody: true,
         invertSwap: true,
         onEnd: (event) => {
-          this.moveClassPath(event.from, event.to, event.oldIndex, event.newIndex);
+          this.moveClassMatch(event.from, event.to, event.oldIndex, event.newIndex);
         }
       });
     });
@@ -128,20 +151,20 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Render a class path group and its members
    */
-  private renderPathListGroup(list: HTMLUListElement, group: ClassPathGroup, groupIndex: number): HTMLUListElement {
+  private renderMatchListGroup(list: HTMLUListElement, group: ClassGroup, groupIndex: number): HTMLUListElement {
     const groupItem = list.createEl('li', {
-      cls: [c('path-group'), c('draggable')]
+      cls: [c('match-group'), c('draggable')]
     });
-    const groupHeader = groupItem.createDiv({ cls: c('path-group-header') });
-    const collapseButton = groupHeader.createSpan({ cls: c('path-group-collapse-button') });
+    const groupHeader = groupItem.createDiv({ cls: c('match-group-header') });
+    const collapseButton = groupHeader.createSpan({ cls: c('match-group-collapse-button') });
     setIcon(collapseButton, group.collapsed ? 'up-chevron-glyph' : 'down-chevron-glyph');
     collapseButton.addEventListener('click', () => {
       this.toggleGroupCollapse(group, groupList, collapseButton);
     });
-    groupHeader.createSpan({ text: group.name, cls: c('path-group-name') });
+    groupHeader.createSpan({ text: group.name, cls: c('match-group-name') });
     const controls = groupHeader.createDiv();
     const editButton = controls.createSpan({
-      cls: c('path-list-control'),
+      cls: c('match-list-control'),
       attr: { 'aria-label': 'Edit Name', role: 'button' }
     });
     setIcon(editButton, 'pencil');
@@ -149,7 +172,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       this.handleEditGroup(group);
     });
     const deleteButton = controls.createSpan({
-      cls: c('path-list-control'),
+      cls: c('match-list-control'),
       attr: { 'aria-label': 'Delete Group', role: 'button' }
     });
     setIcon(deleteButton, 'trash');
@@ -157,18 +180,18 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       this.handleDeleteGroup(group);
     });
     const dragHandle = controls.createSpan({
-      cls: [c('path-list-control'), c('path-list-drag-handle')]
+      cls: [c('match-list-control'), c('match-list-drag-handle')]
     });
     setIcon(dragHandle, 'three-horizontal-bars');
     const groupList = groupItem.createEl('ul', {
-      cls: c('path-group-list'),
+      cls: c('match-group-list'),
       attr: { 'data-index': groupIndex }
     });
     if (group.collapsed) {
       groupList.addClass('collapsed');
     }
     group.members.forEach((groupPath, index) => {
-      this.renderPathListItem(groupList, groupPath, index, group);
+      this.renderMatchListItem(groupList, groupPath, index, group);
     });
     return groupList;
   }
@@ -176,71 +199,83 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Render a path in the main list or in a group
    */
-  private renderPathListItem(
+  private renderMatchListItem(
     list: HTMLUListElement,
-    path: ClassPath,
+    match: ClassPath | ClassTag,
     index: number,
-    group: ClassPathGroup | null = null
+    group: ClassGroup | null = null
   ): void {
+    const isPath = isClassPath(match);
     const listItem = list.createEl('li', {
-      cls: [c('path-list-item'), c('draggable')],
+      cls: [c('match-list-item'), c('draggable')],
       attr: { 'data-index': index }
     });
-    const scope = listItem.createSpan({
-      cls: c('path-scope'),
-      attr: { 'aria-label': `Scope: ${path.scope}` }
+    const matchType = listItem.createSpan({
+      cls: c('match-type'),
+      attr: { 'aria-label': `Type: ${isPath ? 'Path' : 'Tag'}` }
     });
-    this.setScopeIcon(path.scope, scope);
+    setIcon(matchType, isPath ? 'folder' : 'hashtag');
+    const scope = listItem.createSpan({
+      cls: c('match-scope'),
+      attr: { 'aria-label': `Scope: ${match.scope}` }
+    });
+    this.setScopeIcon(match.scope, scope);
 
-    listItem.createSpan({ text: path.path, cls: c('path-list-path') });
-    const controls = listItem.createSpan({ cls: c('path-list-controls') });
+    listItem.createSpan({ text: isPath ? match.path : match.tag, cls: c('match-list-path') });
+    const controls = listItem.createSpan({ cls: c('match-list-controls') });
     const editButton = controls.createSpan({
-      cls: c('path-list-control'),
+      cls: c('match-list-control'),
       attr: { 'aria-label': 'Edit', role: 'button' }
     });
     setIcon(editButton, 'pencil');
     editButton.addEventListener('click', () => {
-      this.beginEditPath(path, group);
+      this.beginEditMatch(match, group);
     });
     const deleteButton = controls.createSpan({
-      cls: c('path-list-control'),
+      cls: c('match-list-control'),
       attr: { 'aria-label': 'Delete', role: 'button' }
     });
     setIcon(deleteButton, 'trash');
     deleteButton.addEventListener('click', () => {
-      this.deletePath(path);
+      this.deleteMatch(match, group);
     });
     const dragHandle = controls.createSpan({
-      cls: [c('path-list-control'), c('path-list-drag-handle')]
+      cls: [c('match-list-control'), c('match-list-drag-handle')]
     });
     setIcon(dragHandle, 'three-horizontal-bars');
   }
 
   /**
-   * Called when dropping a dragged path or path group.
+   * Called when dropping a dragged match or match group.
    * Saves the new location of the dragged item.
    */
-  private async moveClassPath(from: HTMLElement, to: HTMLElement, oldIndex: number, newIndex: number): Promise<void> {
+  private async moveClassMatch(from: HTMLElement, to: HTMLElement, oldIndex: number, newIndex: number): Promise<void> {
     const fromIndex = parseInt(from.getAttribute('data-index'));
     const toIndex = parseInt(to.getAttribute('data-index'));
     const fromList =
-      fromIndex !== -1 ? (this.plugin.settings.paths[fromIndex] as ClassPathGroup) : this.plugin.settings.paths;
-    let toList: ClassPathGroup | (ClassPath | ClassPathGroup)[];
+      fromIndex !== -1 ? (this.plugin.settings.matches[fromIndex] as ClassGroup) : this.plugin.settings.matches;
+    let toList: ClassGroup | (ClassPath | ClassTag | ClassGroup)[];
     if (fromIndex === toIndex) {
       toList = fromList;
     } else if (toIndex !== -1) {
-      toList = this.plugin.settings.paths[toIndex] as ClassPathGroup;
+      toList = this.plugin.settings.matches[toIndex] as ClassGroup;
     } else {
-      toList = this.plugin.settings.paths;
+      toList = this.plugin.settings.matches;
     }
 
     // Remove from old list
-    const path = !Array.isArray(fromList) ? fromList.members.splice(oldIndex, 1) : fromList.splice(oldIndex, 1);
+    const matchOrGroup = !Array.isArray(fromList)
+      ? // Removing from a group
+        fromList.members.splice(oldIndex, 1)
+      : // Removing from the root list
+        fromList.splice(oldIndex, 1);
 
     // Add to new list
     !Array.isArray(toList)
-      ? toList.members.splice(newIndex, 0, path[0] as ClassPath)
-      : toList.splice(newIndex, 0, ...path);
+      ? // Adding to a group
+        toList.members.splice(newIndex, 0, matchOrGroup[0] as ClassPath)
+      : // Adding to the root list
+        toList.splice(newIndex, 0, ...matchOrGroup);
     await this.plugin.saveSettings();
     this.display();
   }
@@ -248,17 +283,21 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Initialize and open the manage path modal
    */
-  private beginEditPath(classPath: ClassPath, group: ClassPathGroup | null = null): void {
-    this.managePathModal.classPath = classPath;
+  private beginEditMatch(classPath: ClassPath | ClassTag, group: ClassGroup | null = null): void {
+    this.managePathModal.classMatch = classPath;
     this.managePathModal.group = group;
     this.managePathModal.open();
   }
 
   /**
-   * Delete the given path
+   * Delete the given match
    */
-  private async deletePath(classPath: ClassPath): Promise<void> {
-    this.plugin.settings.paths.remove(classPath);
+  private async deleteMatch(classMatch: ClassPath | ClassTag, group: ClassGroup | null = null): Promise<void> {
+    if (!group) {
+      this.plugin.settings.matches.remove(classMatch);
+    } else {
+      group.members.remove(classMatch);
+    }
     await this.plugin.saveSettings();
     this.display();
   }
@@ -266,8 +305,8 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Add a new path
    */
-  private async addPath(classPath: ClassPath): Promise<void> {
-    this.plugin.settings.paths.unshift(classPath);
+  private async addMatch(classMatch: ClassPath | ClassTag): Promise<void> {
+    this.plugin.settings.matches.unshift(classMatch);
     await this.plugin.saveSettings();
     this.display();
   }
@@ -275,10 +314,14 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Passed to the edit group modal for saving
    */
-  private async editPath(original: ClassPath, updated: ClassPath, group: ClassPathGroup | null = null): Promise<void> {
-    let sourceList = this.plugin.settings.paths;
+  private async editMatch(
+    original: ClassPath | ClassTag,
+    updated: ClassPath | ClassTag,
+    group: ClassGroup | null = null
+  ): Promise<void> {
+    let sourceList = this.plugin.settings.matches;
     if (group !== null) {
-      const sourceGroup = this.plugin.settings.paths.find((p) => p === group) as ClassPathGroup | undefined;
+      const sourceGroup = this.plugin.settings.matches.find((p) => p === group) as ClassGroup | undefined;
       if (sourceGroup) {
         sourceList = sourceGroup.members;
       } else {
@@ -298,7 +341,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private async addGroup(name: string): Promise<void> {
     if (name) {
-      this.plugin.settings.paths.unshift({ name: name, members: [], collapsed: false });
+      this.plugin.settings.matches.unshift({ name: name, members: [], collapsed: false });
       await this.plugin.saveSettings();
       this.display();
     }
@@ -309,10 +352,20 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private handleFolderButton(input: HTMLInputElement): void {
     const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
-    this.folderSuggestModal.selectedFolder = null;
+    this.folderSuggestModal.selectedItem = null;
     this.folderSuggestModal.items = folders;
     this.folderSuggestModal.callback = (folder: TFolder) => {
       input.value = folder.path;
+    };
+    this.folderSuggestModal.open();
+  }
+
+  private handleTagButton(input: HTMLInputElement): void {
+    const tags: string[] = Object.keys((this.app.metadataCache as any).getTags());
+    this.folderSuggestModal.selectedItem = null;
+    this.folderSuggestModal.items = tags;
+    this.folderSuggestModal.callback = (tag: string) => {
+      input.value = tag;
     };
     this.folderSuggestModal.open();
   }
@@ -323,7 +376,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * DOES NOT re-render the modal, since that shouldn't
    * be necessary.
    */
-  private toggleGroupCollapse(group: ClassPathGroup, groupList: HTMLElement, collapseButton: HTMLSpanElement): void {
+  private toggleGroupCollapse(group: ClassGroup, groupList: HTMLElement, collapseButton: HTMLSpanElement): void {
     if (group.collapsed) {
       groupList.removeClass('collapsed');
     } else {
@@ -337,7 +390,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Open the edit name modal for the given group
    */
-  private handleEditGroup(group: ClassPathGroup): void {
+  private handleEditGroup(group: ClassGroup): void {
     const editCallback = (newName: string) => {
       group.name = newName;
       this.plugin.saveSettings();
@@ -351,31 +404,37 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Confirms deletion of the given group and all of its children
    */
-  private handleDeleteGroup(group: ClassPathGroup): void {
-    const responseCallback = (deleteGroup: boolean) => {
-      if (deleteGroup) {
-        this.plugin.settings.paths.remove(group);
-        this.plugin.saveSettings();
-        this.display();
-      }
-      this.confirmModal.close();
-    };
-    this.confirmModal.callback = responseCallback;
-    this.confirmModal.open();
+  private handleDeleteGroup(group: ClassGroup): void {
+    if (group.members.length === 0) {
+      this.plugin.settings.matches.remove(group);
+      this.plugin.saveSettings();
+      this.display();
+    } else {
+      const responseCallback = (deleteGroup: boolean) => {
+        if (deleteGroup) {
+          this.plugin.settings.matches.remove(group);
+          this.plugin.saveSettings();
+          this.display();
+        }
+        this.confirmModal.close();
+      };
+      this.confirmModal.callback = responseCallback;
+      this.confirmModal.open();
+    }
   }
 
   /**
    * Sets the correct icon on the scopeEl based on the current scope
    */
-  private setScopeIcon(currentScope: ClassPathScope, scopeEl: HTMLElement): void {
+  private setScopeIcon(currentScope: ClassMatchScope, scopeEl: HTMLElement): void {
     switch (currentScope) {
-      case ClassPathScope.Preview:
+      case ClassMatchScope.Preview:
         setIcon(scopeEl, 'lines-of-text');
         break;
-      case ClassPathScope.Edit:
+      case ClassMatchScope.Edit:
         setIcon(scopeEl, 'code-glyph');
         break;
-      case ClassPathScope.Both:
+      case ClassMatchScope.Both:
         setIcon(scopeEl, 'documents');
         break;
     }

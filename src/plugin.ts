@@ -1,10 +1,10 @@
 import { MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
-import { ClassPathScope } from './enum';
-import { AutoClassPluginSettings, ClassPath } from './interfaces';
+import { ClassMatchScope } from './enum';
+import { AutoClassPluginSettings, ClassPath, ClassTag } from './interfaces';
 import { migrate } from './migrations';
 import { AutoClassPluginSettingsTab } from './settings/settings';
-import { isClassPathGroup } from './util';
+import { isClassGroup, isClassPath, isClassTag } from './util';
 
 export class AutoClassPlugin extends Plugin {
   appliedClasses = new WeakMap<MarkdownView, string[]>();
@@ -30,34 +30,28 @@ export class AutoClassPlugin extends Plugin {
    */
   handleLayoutChange(): void {
     const activeViews = this.getAllActiveViews();
-    if (activeViews) {
-      // Flatten groups into a single array
-      const allPaths = this.settings.paths.flatMap((p) => (isClassPathGroup(p) ? p.members : p));
-
-      // Remove and apply classes for each applicable view
-      activeViews.forEach((view) => {
-        this.removePreviousClasses(view);
-        let matches: ClassPath[] = [];
-        let container: Element;
-        if (this.isPreivewMode(view)) {
-          matches = allPaths.filter(
-            (path) =>
-              (path.scope === ClassPathScope.Preview || path.scope === ClassPathScope.Both) &&
-              view.file.path.startsWith(path.path)
-          );
-          container = this.getPreviewContainer(view);
-        } else if (this.isEditMode(view)) {
-          matches = allPaths.filter(
-            (path) =>
-              (path.scope === ClassPathScope.Edit || path.scope === ClassPathScope.Both) &&
-              view.file.path.startsWith(path.path)
-          );
-          container = this.getEditContainer(view);
-        }
-        const classes: string[] = matches.flatMap((match) => match.classes);
-        this.applyClasses(classes, view, container);
-      });
+    if (!activeViews) {
+      return;
     }
+
+    // Flatten groups into a single array
+    const allClasses = this.settings.matches.flatMap((p) => (isClassGroup(p) ? p.members : p));
+
+    // Remove and apply classes for each applicable view
+    activeViews.forEach((view) => {
+      this.removePreviousClasses(view);
+      let matches: Array<ClassPath | ClassTag> = [];
+      let container: Element;
+      if (this.isPreivewMode(view)) {
+        matches = this.getMatches(view, allClasses, ClassMatchScope.Preview);
+        container = this.getPreviewContainer(view);
+      } else if (this.isEditMode(view)) {
+        matches = this.getMatches(view, allClasses, ClassMatchScope.Edit);
+        container = this.getEditContainer(view);
+      }
+      const classes: string[] = matches.flatMap((match) => match.classes);
+      this.applyClasses(classes, view, container);
+    });
   }
 
   /**
@@ -98,6 +92,28 @@ export class AutoClassPlugin extends Plugin {
    */
   private isEditMode(view: MarkdownView): boolean {
     return view.getMode() === 'source';
+  }
+
+  /**
+   * Given a view, a configured set of paths and tags, and the
+   * scope to match to, return all paths and tags that match
+   */
+  private getMatches(
+    view: MarkdownView,
+    allClasses: Array<ClassPath | ClassTag>,
+    scope: ClassMatchScope
+  ): Array<ClassPath | ClassTag> {
+    const viewTags = (this.app.metadataCache.getFileCache(view.file).tags || []).map((meta) => meta.tag);
+    return allClasses.filter((pathOrTag) => {
+      if (pathOrTag.scope !== scope && pathOrTag.scope !== ClassMatchScope.Both) {
+        return false;
+      }
+      if (isClassPath(pathOrTag)) {
+        return view.file.path.startsWith(pathOrTag.path);
+      } else if (isClassTag(pathOrTag)) {
+        return viewTags.includes(pathOrTag.tag);
+      }
+    });
   }
 
   /**

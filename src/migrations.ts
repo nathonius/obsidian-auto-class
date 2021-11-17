@@ -1,16 +1,11 @@
 import { DEFAULT_SETTINGS } from './constants';
-import { ClassPathScope } from './enum';
-import { ClassPath } from './interfaces';
+import { AutoClassPluginSettings } from './interfaces';
 import { AutoClassPlugin } from './plugin';
-import { getClassList } from './util';
 
 export async function migrate(plugin: AutoClassPlugin): Promise<void> {
-  if (
-    plugin.settings &&
-    (plugin.settings.version !== DEFAULT_SETTINGS.version || !Array.isArray(plugin.settings.paths))
-  ) {
+  if (plugin.settings && plugin.settings.version !== DEFAULT_SETTINGS.version) {
     // Execute migrations
-    recordPathsToClassPath(plugin);
+    pathsToMatches(plugin.settings);
 
     // Update version
     plugin.settings.version = DEFAULT_SETTINGS.version;
@@ -21,23 +16,11 @@ export async function migrate(plugin: AutoClassPlugin): Promise<void> {
 }
 
 /**
- * Paths used to be stored in records
- * Now they are stored as arrays
+ * Moves old settings from {paths: [...]} to {matches: [...]}
  */
-function recordPathsToClassPath(plugin: AutoClassPlugin): void {
-  // Migrate record paths to array
-  if (!Array.isArray(plugin.settings.paths)) {
-    try {
-      const oldPaths = plugin.settings.paths as Record<string, string>;
-      const newPaths: ClassPath[] = [];
-      Object.keys(oldPaths).forEach((key) => {
-        const classes = getClassList(oldPaths[key]);
-        newPaths.push({ path: key, classes, scope: ClassPathScope.Preview });
-      });
-      plugin.settings.paths = newPaths;
-    } catch {
-      // Fallback if something goes wrong.
-      plugin.settings.paths = [];
-    }
+function pathsToMatches(settings: AutoClassPluginSettings): void {
+  if ('paths' in settings) {
+    settings.matches = (settings as any).paths;
+    delete (settings as any).paths;
   }
 }

@@ -1,3 +1,18 @@
+# 2.0.0
+
+## Features
+
+- Add and remove classes automatically based on on a note's tags
+
+## Fixes
+
+- Paths and tags in groups can be deleted
+- Empty groups are deleted without confirmation
+
+## Breaking Changes
+
+- If updating directly from version 1.1.0 or below, settings will not be migrated.
+
 # 1.5.3
 
 ## Fixes
