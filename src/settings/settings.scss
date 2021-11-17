@@ -23,10 +23,10 @@
     padding: 0;
     padding-bottom: 10px;
   }
-  &__path-group {
+  &__match-group {
     min-height: 40px;
   }
-  &__path-group-header {
+  &__match-group-header {
     display: flex;
     padding: 4px;
     border-radius: 4px;
@@ -35,23 +35,23 @@
       vertical-align: middle;
     }
   }
-  &__path-group-collapse-button {
+  &__match-group-collapse-button {
     cursor: pointer;
     padding: 0px 4px;
     color: var(--text-faint);
     margin-right: 6px;
   }
-  &__path-group-name {
+  &__match-group-name {
     flex-grow: 1;
   }
-  &__path-group-list {
+  &__match-group-list {
     padding-inline-start: 20px;
     &.collapsed {
       max-height: 0px;
       overflow: hidden;
     }
   }
-  &__path-list-item {
+  &__match-list-item {
     display: flex;
     transition: background-color 150ms ease;
     padding: 4px;
@@ -61,15 +61,15 @@
       vertical-align: middle;
     }
   }
-  &__path-scope {
+  &__match-scope {
     padding: 0px 4px;
     color: var(--text-faint);
     margin-right: 6px;
   }
-  &__path-list-path {
+  &__match-list-path {
     flex-grow: 1;
   }
-  &__path-list-control {
+  &__match-list-control {
     margin-left: 8px;
     cursor: pointer;
 
@@ -77,7 +77,7 @@
       color: var(--text-accent-hover);
     }
 
-    &.auto-class-settings__path-list-drag-handle {
+    &.auto-class-settings__match-list-drag-handle {
       cursor: grab;
     }
   }

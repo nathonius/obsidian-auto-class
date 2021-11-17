@@ -5,16 +5,16 @@ import { className, getClassList } from '../util';
 import { AutoClassPlugin } from '../plugin';
 import { FolderSuggestModal } from './folder-suggest';
 
-const c = className('auto-class-manage-path');
+const c = className('auto-class-manage-match');
 
-export class ManagePathModal extends Modal {
+export class ManageMatchModal extends Modal {
   readonly folderSuggestModal = new FolderSuggestModal(this.app);
   classPath: ClassPath | null = null;
   group: ClassGroup | null = null;
   updatedClassPath: ClassPath | null = null;
   save: (original: ClassPath, updated: ClassPath, group: ClassGroup | null) => Promise<void>;
 
-  constructor(private readonly plugin: AutoClassPlugin) {
+  constructor(plugin: AutoClassPlugin) {
     super(plugin.app);
     this.modalEl.addClass(c('modal'));
   }
@@ -32,27 +32,29 @@ export class ManagePathModal extends Modal {
     this.titleEl.setText('Edit path');
 
     // Render path field
-    const pathInputContainer = this.contentEl.createDiv(c('input-container'));
-    pathInputContainer.createEl('label', {
+    const matchInputContainer = this.contentEl.createDiv(c('input-container'));
+    matchInputContainer.createEl('label', {
       text: 'Target folder',
       attr: { for: c('path-input') }
     });
-    const pathInputWrapper = pathInputContainer.createDiv(c('path-input-wrapper'));
-    const pathButton = pathInputWrapper.createEl('button', { attr: { type: 'button', 'aria-label': 'Select folder' } });
+    const matchInputWrapper = matchInputContainer.createDiv(c('match-input-wrapper'));
+    const pathButton = matchInputWrapper.createEl('button', {
+      attr: { type: 'button', 'aria-label': 'Select folder' }
+    });
     setIcon(pathButton, 'folder');
     const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
     pathButton.addEventListener('click', () => {
       this.folderSuggestModal.selectedFolder = null;
       this.folderSuggestModal.items = folders;
       this.folderSuggestModal.callback = (folder: TFolder) => {
-        pathInput.value = folder.path;
+        matchInput.value = folder.path;
       };
       this.folderSuggestModal.open();
     });
-    const pathInput = pathInputWrapper.createEl('input', {
+    const matchInput = matchInputWrapper.createEl('input', {
       attr: { placeholder: 'Folder', type: 'text', id: c('path-input') }
     });
-    pathInput.value = this.updatedClassPath.path;
+    matchInput.value = this.updatedClassPath.path;
 
     // Render scope dropdown
     const scopeDropdownContainer = this.contentEl.createDiv(c('input-container'));

@@ -1,4 +1,4 @@
-.auto-class-manage-path {
+.auto-class-manage-match {
   &__modal {
     min-width: 50vw;
   }
@@ -9,7 +9,7 @@
       padding: 0 0 4px 1px;
     }
   }
-  &__path-input-wrapper {
+  &__match-input-wrapper {
     display: flex;
     input {
       flex-grow: 1;
