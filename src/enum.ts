@@ -3,3 +3,8 @@ export enum ClassMatchScope {
   Edit = 'Edit',
   Both = 'Preview & Edit'
 }
+
+export enum ClassMatchType {
+  Path,
+  Tag
+}

@@ -1,18 +1,18 @@
 import { Modal, setIcon, TFolder } from 'obsidian';
 import { ClassMatchScope } from '../enum';
-import { ClassPath, ClassGroup } from '../interfaces';
-import { className, getClassList } from '../util';
+import { ClassPath, ClassGroup, ClassTag } from '../interfaces';
+import { className, getClassList, isClassPath } from '../util';
 import { AutoClassPlugin } from '../plugin';
-import { FolderSuggestModal } from './folder-suggest';
+import { SuggestModal } from './suggest';
 
 const c = className('auto-class-manage-match');
 
 export class ManageMatchModal extends Modal {
-  readonly folderSuggestModal = new FolderSuggestModal(this.app);
-  classPath: ClassPath | null = null;
+  readonly suggestModal = new SuggestModal(this.app);
+  classMatch: ClassPath | ClassTag | null = null;
   group: ClassGroup | null = null;
-  updatedClassPath: ClassPath | null = null;
-  save: (original: ClassPath, updated: ClassPath, group: ClassGroup | null) => Promise<void>;
+  updatedClassMatch: ClassPath | ClassTag | null = null;
+  save: (original: ClassPath | ClassTag, updated: ClassPath | ClassTag, group: ClassGroup | null) => Promise<void>;
 
   constructor(plugin: AutoClassPlugin) {
     super(plugin.app);
@@ -20,41 +20,58 @@ export class ManageMatchModal extends Modal {
   }
 
   onOpen(): void {
-    if (this.classPath) {
+    if (this.classMatch) {
       // Make a copy of the original setting
-      this.updatedClassPath = { ...this.classPath, classes: [...this.classPath.classes] };
+      this.updatedClassMatch = { ...this.classMatch, classes: [...this.classMatch.classes] };
       this.display();
     }
   }
 
   display(): void {
+    const isPath = isClassPath(this.classMatch);
     this.contentEl.empty();
-    this.titleEl.setText('Edit path');
+    this.titleEl.setText(isPath ? 'Edit path' : 'Edit tag');
 
-    // Render path field
+    // Render path/tag field
     const matchInputContainer = this.contentEl.createDiv(c('input-container'));
     matchInputContainer.createEl('label', {
-      text: 'Target folder',
+      text: isPath ? 'Target folder' : 'Target tag',
       attr: { for: c('path-input') }
     });
     const matchInputWrapper = matchInputContainer.createDiv(c('match-input-wrapper'));
-    const pathButton = matchInputWrapper.createEl('button', {
-      attr: { type: 'button', 'aria-label': 'Select folder' }
-    });
-    setIcon(pathButton, 'folder');
-    const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
-    pathButton.addEventListener('click', () => {
-      this.folderSuggestModal.selectedFolder = null;
-      this.folderSuggestModal.items = folders;
-      this.folderSuggestModal.callback = (folder: TFolder) => {
-        matchInput.value = folder.path;
-      };
-      this.folderSuggestModal.open();
-    });
+    if (isPath) {
+      const pathButton = matchInputWrapper.createEl('button', {
+        attr: { type: 'button', 'aria-label': 'Select folder' }
+      });
+      setIcon(pathButton, 'folder');
+      const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
+      pathButton.addEventListener('click', () => {
+        this.suggestModal.selectedItem = null;
+        this.suggestModal.items = folders;
+        this.suggestModal.callback = (folder: TFolder) => {
+          matchInput.value = folder.path;
+        };
+        this.suggestModal.open();
+      });
+    } else {
+      const tagButton = matchInputWrapper.createEl('button', {
+        attr: { type: 'button', 'aria-label': 'Select tag' }
+      });
+      setIcon(tagButton, 'hashtag');
+      const tags: string[] = Object.keys((this.app.metadataCache as any).getTags());
+      tagButton.addEventListener('click', () => {
+        this.suggestModal.selectedItem = null;
+        this.suggestModal.items = tags;
+        this.suggestModal.callback = (tag: string) => {
+          matchInput.value = tag;
+        };
+        this.suggestModal.open();
+      });
+    }
     const matchInput = matchInputWrapper.createEl('input', {
       attr: { placeholder: 'Folder', type: 'text', id: c('path-input') }
     });
-    matchInput.value = this.updatedClassPath.path;
+    matchInput.value = isPath ? (this.updatedClassMatch as ClassPath).path : (this.updatedClassMatch as ClassTag).tag;
 
     // Render scope dropdown
     const scopeDropdownContainer = this.contentEl.createDiv(c('input-container'));
@@ -70,25 +87,25 @@ export class ManageMatchModal extends Modal {
       text: ClassMatchScope.Preview,
       attr: { value: ClassMatchScope.Preview }
     });
-    if (this.updatedClassPath.scope === ClassMatchScope.Preview) {
+    if (this.updatedClassMatch.scope === ClassMatchScope.Preview) {
       previewOption.selected = true;
     }
     const editOption = scopeSelect.createEl('option', {
       text: ClassMatchScope.Edit,
       attr: { value: ClassMatchScope.Edit }
     });
-    if (this.updatedClassPath.scope === ClassMatchScope.Edit) {
+    if (this.updatedClassMatch.scope === ClassMatchScope.Edit) {
       editOption.selected = true;
     }
     const bothOption = scopeSelect.createEl('option', {
       text: ClassMatchScope.Both,
       attr: { value: ClassMatchScope.Both }
     });
-    if (this.updatedClassPath.scope === ClassMatchScope.Both) {
+    if (this.updatedClassMatch.scope === ClassMatchScope.Both) {
       bothOption.selected = true;
     }
     scopeSelect.addEventListener('change', (event: Event) => {
-      this.updatedClassPath.scope = (event.target as HTMLSelectElement).value as ClassMatchScope;
+      this.updatedClassMatch.scope = (event.target as HTMLSelectElement).value as ClassMatchScope;
     });
 
     // Render class input
@@ -112,8 +129,8 @@ export class ManageMatchModal extends Modal {
     const classListContainer = this.contentEl.createDiv(c('class-list-container'));
     classListContainer.createEl('h3', { text: 'Classes' });
     const classList = classListContainer.createEl('ul', { cls: c('class-list') });
-    for (let i = 0; i < this.updatedClassPath.classes.length; i++) {
-      const classname = this.updatedClassPath.classes[i];
+    for (let i = 0; i < this.updatedClassMatch.classes.length; i++) {
+      const classname = this.updatedClassMatch.classes[i];
       const listItem = classList.createEl('li', { cls: c('class-list-item') });
       listItem.createSpan({ text: classname });
       const deleteButton = listItem.createEl('span', {
@@ -122,7 +139,7 @@ export class ManageMatchModal extends Modal {
       });
       setIcon(deleteButton, 'trash');
       deleteButton.addEventListener('click', () => {
-        this.updatedClassPath.classes.splice(i, 1);
+        this.updatedClassMatch.classes.splice(i, 1);
         this.display();
       });
     }
@@ -133,7 +150,7 @@ export class ManageMatchModal extends Modal {
     const controlsContainer = this.contentEl.createDiv(c('controls'));
     const saveButton = controlsContainer.createEl('button', { cls: 'mod-cta', text: 'Save', attr: { type: 'button' } });
     saveButton.addEventListener('click', async () => {
-      await this.save(this.classPath, this.updatedClassPath, this.group);
+      await this.save(this.classMatch, this.updatedClassMatch, this.group);
       this.close();
     });
     const cancelButton = controlsContainer.createEl('button', { text: 'Cancel', attr: { type: 'button' } });
@@ -143,7 +160,7 @@ export class ManageMatchModal extends Modal {
   }
 
   addClasses(classes: string): void {
-    this.updatedClassPath.classes = [...getClassList(classes), ...this.updatedClassPath.classes];
+    this.updatedClassMatch.classes = [...getClassList(classes), ...this.updatedClassMatch.classes];
     this.display();
   }
 }

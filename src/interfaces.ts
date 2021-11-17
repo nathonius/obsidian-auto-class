@@ -8,7 +8,7 @@ export interface AutoClassPluginSettings {
 
 export interface ClassGroup {
   name: string;
-  members: ClassPath[];
+  members: Array<ClassPath | ClassTag>;
   collapsed: boolean;
 }
 

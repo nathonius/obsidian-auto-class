@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, setIcon, TFolder } from 'obsidian';
 import Sortable from 'sortablejs';
 import { ClassMatchScope } from '../enum';
-import { FolderSuggestModal } from '../modal/folder-suggest';
+import { SuggestModal } from '../modal/suggest';
 import { ManageMatchModal } from '../modal/manage-match';
 import { AutoClassPluginSettings, ClassPath, ClassGroup, ClassTag } from '../interfaces';
 import { AutoClassPlugin } from '../plugin';
@@ -12,7 +12,7 @@ import { className, isClassGroup, isClassPath } from '../util';
 const c = className('auto-class-settings');
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
-  private readonly folderSuggestModal: FolderSuggestModal = new FolderSuggestModal(this.app);
+  private readonly folderSuggestModal: SuggestModal = new SuggestModal(this.app);
   private readonly managePathModal: ManageMatchModal = new ManageMatchModal(this.plugin);
   private readonly confirmModal: ConfirmModal = new ConfirmModal(this.app);
   private readonly editNameModal: EditNameModal = new EditNameModal(this.app);
@@ -35,6 +35,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
 
     this.renderPathInput(this.containerEl);
+    this.renderTagInput(this.containerEl);
     this.renderGroupInput(this.containerEl);
     this.containerEl.createEl('h3', { text: 'Paths & Tags' });
     this.renderPathList(this.containerEl, this.plugin.settings);
@@ -60,6 +61,27 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     addPathButton.addEventListener('click', () => {
       if (pathInput.value) {
         this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Preview, classes: [] });
+      }
+    });
+  }
+
+  private renderTagInput(parent: HTMLElement): void {
+    const inputContainer = parent.createDiv({ cls: c('input-container') });
+    const tagButton = inputContainer.createEl('button', { cls: c('path-button') });
+    setIcon(tagButton, 'hashtag');
+    tagButton.addEventListener('click', () => this.handleTagButton(tagInput));
+
+    const tagInput = inputContainer.createEl('input', {
+      attr: { placeholder: 'Folder', type: 'text' }
+    });
+
+    const addTagButton = inputContainer.createEl('button', {
+      text: 'Add Tag',
+      cls: [c('add-button'), 'mod-cta']
+    });
+    addTagButton.addEventListener('click', () => {
+      if (tagInput.value) {
+        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Preview, classes: [] });
       }
     });
   }
@@ -92,7 +114,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     settings.paths.forEach((match, index) => {
       if (isClassGroup(match)) {
         sortableLists.push(this.renderMatchListGroup(list, match, index));
-      } else if (isClassPath(match)) {
+      } else {
         this.renderMatchListItem(list, match, index);
       }
     });
@@ -183,41 +205,44 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     index: number,
     group: ClassGroup | null = null
   ): void {
-    // TODO: Handle tags
-    if (isClassPath(match)) {
-      const listItem = list.createEl('li', {
-        cls: [c('match-list-item'), c('draggable')],
-        attr: { 'data-index': index }
-      });
-      const scope = listItem.createSpan({
-        cls: c('match-scope'),
-        attr: { 'aria-label': `Scope: ${match.scope}` }
-      });
-      this.setScopeIcon(match.scope, scope);
+    const isPath = isClassPath(match);
+    const listItem = list.createEl('li', {
+      cls: [c('match-list-item'), c('draggable')],
+      attr: { 'data-index': index }
+    });
+    const matchType = listItem.createSpan({
+      cls: c('match-type'),
+      attr: { 'aria-label': `Type: ${isPath ? 'Path' : 'Tag'}` }
+    });
+    setIcon(matchType, isPath ? 'folder' : 'hashtag');
+    const scope = listItem.createSpan({
+      cls: c('match-scope'),
+      attr: { 'aria-label': `Scope: ${match.scope}` }
+    });
+    this.setScopeIcon(match.scope, scope);
 
-      listItem.createSpan({ text: match.path, cls: c('match-list-path') });
-      const controls = listItem.createSpan({ cls: c('match-list-controls') });
-      const editButton = controls.createSpan({
-        cls: c('match-list-control'),
-        attr: { 'aria-label': 'Edit', role: 'button' }
-      });
-      setIcon(editButton, 'pencil');
-      editButton.addEventListener('click', () => {
-        this.beginEditPath(match, group);
-      });
-      const deleteButton = controls.createSpan({
-        cls: c('match-list-control'),
-        attr: { 'aria-label': 'Delete', role: 'button' }
-      });
-      setIcon(deleteButton, 'trash');
-      deleteButton.addEventListener('click', () => {
-        this.deleteMatch(match);
-      });
-      const dragHandle = controls.createSpan({
-        cls: [c('match-list-control'), c('match-list-drag-handle')]
-      });
-      setIcon(dragHandle, 'three-horizontal-bars');
-    }
+    listItem.createSpan({ text: isPath ? match.path : match.tag, cls: c('match-list-path') });
+    const controls = listItem.createSpan({ cls: c('match-list-controls') });
+    const editButton = controls.createSpan({
+      cls: c('match-list-control'),
+      attr: { 'aria-label': 'Edit', role: 'button' }
+    });
+    setIcon(editButton, 'pencil');
+    editButton.addEventListener('click', () => {
+      this.beginEditMatch(match, group);
+    });
+    const deleteButton = controls.createSpan({
+      cls: c('match-list-control'),
+      attr: { 'aria-label': 'Delete', role: 'button' }
+    });
+    setIcon(deleteButton, 'trash');
+    deleteButton.addEventListener('click', () => {
+      this.deleteMatch(match, group);
+    });
+    const dragHandle = controls.createSpan({
+      cls: [c('match-list-control'), c('match-list-drag-handle')]
+    });
+    setIcon(dragHandle, 'three-horizontal-bars');
   }
 
   /**
@@ -258,8 +283,8 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Initialize and open the manage path modal
    */
-  private beginEditPath(classPath: ClassPath, group: ClassGroup | null = null): void {
-    this.managePathModal.classPath = classPath;
+  private beginEditMatch(classPath: ClassPath | ClassTag, group: ClassGroup | null = null): void {
+    this.managePathModal.classMatch = classPath;
     this.managePathModal.group = group;
     this.managePathModal.open();
   }
@@ -267,8 +292,12 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Delete the given match
    */
-  private async deleteMatch(classMatch: ClassPath | ClassTag): Promise<void> {
-    this.plugin.settings.paths.remove(classMatch);
+  private async deleteMatch(classMatch: ClassPath | ClassTag, group: ClassGroup | null = null): Promise<void> {
+    if (!group) {
+      this.plugin.settings.paths.remove(classMatch);
+    } else {
+      group.members.remove(classMatch);
+    }
     await this.plugin.saveSettings();
     this.display();
   }
@@ -323,10 +352,20 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private handleFolderButton(input: HTMLInputElement): void {
     const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
-    this.folderSuggestModal.selectedFolder = null;
+    this.folderSuggestModal.selectedItem = null;
     this.folderSuggestModal.items = folders;
     this.folderSuggestModal.callback = (folder: TFolder) => {
       input.value = folder.path;
+    };
+    this.folderSuggestModal.open();
+  }
+
+  private handleTagButton(input: HTMLInputElement): void {
+    const tags: string[] = Object.keys((this.app.metadataCache as any).getTags());
+    this.folderSuggestModal.selectedItem = null;
+    this.folderSuggestModal.items = tags;
+    this.folderSuggestModal.callback = (tag: string) => {
+      input.value = tag;
     };
     this.folderSuggestModal.open();
   }

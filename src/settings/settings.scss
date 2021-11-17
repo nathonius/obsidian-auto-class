@@ -60,10 +60,16 @@
     svg {
       vertical-align: middle;
     }
+    &:hover {
+      background-color: var(--background-primary);
+    }
   }
+  &__match-type,
   &__match-scope {
     padding: 0px 4px;
     color: var(--text-faint);
+  }
+  &__match-scope {
     margin-right: 6px;
   }
   &__match-list-path {
