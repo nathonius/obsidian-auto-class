@@ -32,7 +32,7 @@ export class AutoClassPlugin extends Plugin {
     const activeViews = this.getAllActiveViews();
     if (activeViews) {
       // Flatten groups into a single array
-      const allClasses = this.settings.paths.flatMap((p) => (isClassGroup(p) ? p.members : p));
+      const allClasses = this.settings.matches.flatMap((p) => (isClassGroup(p) ? p.members : p));
 
       // Remove and apply classes for each applicable view
       activeViews.forEach((view) => {

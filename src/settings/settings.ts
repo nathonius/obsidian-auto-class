@@ -72,7 +72,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     tagButton.addEventListener('click', () => this.handleTagButton(tagInput));
 
     const tagInput = inputContainer.createEl('input', {
-      attr: { placeholder: 'Folder', type: 'text' }
+      attr: { placeholder: '#Tag', type: 'text' }
     });
 
     const addTagButton = inputContainer.createEl('button', {
@@ -111,7 +111,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   private renderPathList(parent: HTMLElement, settings: AutoClassPluginSettings): void {
     const list = parent.createEl('ul', { cls: c('match-list'), attr: { 'data-index': -1 } });
     const sortableLists = [list];
-    settings.paths.forEach((match, index) => {
+    settings.matches.forEach((match, index) => {
       if (isClassGroup(match)) {
         sortableLists.push(this.renderMatchListGroup(list, match, index));
       } else {
@@ -253,14 +253,14 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     const fromIndex = parseInt(from.getAttribute('data-index'));
     const toIndex = parseInt(to.getAttribute('data-index'));
     const fromList =
-      fromIndex !== -1 ? (this.plugin.settings.paths[fromIndex] as ClassGroup) : this.plugin.settings.paths;
+      fromIndex !== -1 ? (this.plugin.settings.matches[fromIndex] as ClassGroup) : this.plugin.settings.matches;
     let toList: ClassGroup | (ClassPath | ClassTag | ClassGroup)[];
     if (fromIndex === toIndex) {
       toList = fromList;
     } else if (toIndex !== -1) {
-      toList = this.plugin.settings.paths[toIndex] as ClassGroup;
+      toList = this.plugin.settings.matches[toIndex] as ClassGroup;
     } else {
-      toList = this.plugin.settings.paths;
+      toList = this.plugin.settings.matches;
     }
 
     // Remove from old list
@@ -294,7 +294,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private async deleteMatch(classMatch: ClassPath | ClassTag, group: ClassGroup | null = null): Promise<void> {
     if (!group) {
-      this.plugin.settings.paths.remove(classMatch);
+      this.plugin.settings.matches.remove(classMatch);
     } else {
       group.members.remove(classMatch);
     }
@@ -306,7 +306,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * Add a new path
    */
   private async addMatch(classMatch: ClassPath | ClassTag): Promise<void> {
-    this.plugin.settings.paths.unshift(classMatch);
+    this.plugin.settings.matches.unshift(classMatch);
     await this.plugin.saveSettings();
     this.display();
   }
@@ -319,9 +319,9 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     updated: ClassPath | ClassTag,
     group: ClassGroup | null = null
   ): Promise<void> {
-    let sourceList = this.plugin.settings.paths;
+    let sourceList = this.plugin.settings.matches;
     if (group !== null) {
-      const sourceGroup = this.plugin.settings.paths.find((p) => p === group) as ClassGroup | undefined;
+      const sourceGroup = this.plugin.settings.matches.find((p) => p === group) as ClassGroup | undefined;
       if (sourceGroup) {
         sourceList = sourceGroup.members;
       } else {
@@ -341,7 +341,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private async addGroup(name: string): Promise<void> {
     if (name) {
-      this.plugin.settings.paths.unshift({ name: name, members: [], collapsed: false });
+      this.plugin.settings.matches.unshift({ name: name, members: [], collapsed: false });
       await this.plugin.saveSettings();
       this.display();
     }
@@ -406,13 +406,13 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private handleDeleteGroup(group: ClassGroup): void {
     if (group.members.length === 0) {
-      this.plugin.settings.paths.remove(group);
+      this.plugin.settings.matches.remove(group);
       this.plugin.saveSettings();
       this.display();
     } else {
       const responseCallback = (deleteGroup: boolean) => {
         if (deleteGroup) {
-          this.plugin.settings.paths.remove(group);
+          this.plugin.settings.matches.remove(group);
           this.plugin.saveSettings();
           this.display();
         }

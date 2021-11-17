@@ -2,7 +2,7 @@ import { MarkdownView } from 'obsidian';
 import { ClassMatchScope } from './enum';
 
 export interface AutoClassPluginSettings {
-  paths: Array<ClassPath | ClassTag | ClassGroup>;
+  matches: Array<ClassPath | ClassTag | ClassGroup>;
   version: string;
 }
 
