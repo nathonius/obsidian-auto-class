@@ -125,6 +125,11 @@ export class ManageMatchModal extends Modal {
     const classInput = classInputWrapper.createEl('input', {
       attr: { placeholder: 'class1, class2', type: 'text', id: c('class-input') }
     });
+    classInput.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter' && classInput.value) {
+        this.addClasses(classInput.value);
+      }
+    });
     const addClassesButton = classInputWrapper.createEl('button', { text: 'Add' });
     addClassesButton.addEventListener('click', () => {
       if (classInput.value) {
