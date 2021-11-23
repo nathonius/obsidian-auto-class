@@ -6,5 +6,5 @@ export const DEFAULT_SETTINGS: AutoClassPluginSettings = {
     { path: 'Example Path/Subfolder/', classes: ['example-class'], scope: ClassMatchScope.Preview },
     { tag: '#ExampleTag', classes: ['another-class'], scope: ClassMatchScope.Edit }
   ],
-  version: '2.0.0'
+  version: '2.1.0'
 };

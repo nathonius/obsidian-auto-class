@@ -1,3 +1,13 @@
+# 2.1.0
+
+## Features
+
+- Can use enter key to add new paths, tags, classes, and groups instead of clicking the associated "add" button
+
+## Fixes
+
+- Changes to the targeted path or tag are saved
+
 # 2.0.0
 
 ## Features
