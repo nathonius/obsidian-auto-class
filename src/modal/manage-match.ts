@@ -28,60 +28,95 @@ export class ManageMatchModal extends Modal {
   }
 
   display(): void {
-    const isPath = isClassPath(this.classMatch);
     this.contentEl.empty();
-    this.titleEl.setText(isPath ? 'Edit path' : 'Edit tag');
+    const isPath = isClassPath(this.classMatch);
+    isPath ? this.renderPath() : this.renderTag();
+    this.renderScopeDropdown(this.contentEl);
+    this.renderClassInput(this.contentEl);
+    this.renderClasses(this.contentEl);
+    this.contentEl.createEl('hr');
+    this.renderControls(this.contentEl);
+  }
 
-    // Render path/tag field
-    const matchInputContainer = this.contentEl.createDiv(c('input-container'));
+  addClasses(classes: string): void {
+    this.updatedClassMatch.classes = [...getClassList(classes), ...this.updatedClassMatch.classes];
+    this.display();
+  }
+
+  private renderPath(): void {
+    this.titleEl.setText('Edit path');
+
+    const { matchButton, matchInput } = this.renderMatchInput(
+      this.contentEl,
+      true,
+      (this.updatedClassMatch as ClassPath).path
+    );
+    const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
+    matchButton.addEventListener('click', () => {
+      this.suggestModal.selectedItem = null;
+      this.suggestModal.items = folders;
+      this.suggestModal.callback = (folder: TFolder) => {
+        matchInput.value = folder.path;
+      };
+      this.suggestModal.open();
+    });
+    matchInput.addEventListener('change', () => {
+      (this.updatedClassMatch as ClassPath).path = matchInput.value;
+    });
+  }
+
+  private renderTag(): void {
+    this.titleEl.setText('Edit tag');
+
+    const { matchButton, matchInput } = this.renderMatchInput(
+      this.contentEl,
+      false,
+      (this.updatedClassMatch as ClassTag).tag
+    );
+    const tags: string[] = Object.keys((this.app.metadataCache as any).getTags());
+    matchButton.addEventListener('click', () => {
+      this.suggestModal.selectedItem = null;
+      this.suggestModal.items = tags;
+      this.suggestModal.callback = (tag: string) => {
+        matchInput.value = tag;
+      };
+      this.suggestModal.open();
+    });
+    matchInput.addEventListener('change', () => {
+      (this.updatedClassMatch as ClassTag).tag = matchInput.value;
+    });
+  }
+
+  private renderMatchInput(
+    parent: HTMLElement,
+    isPath: boolean,
+    value: string
+  ): { matchButton: HTMLButtonElement; matchInput: HTMLInputElement } {
+    const matchInputContainer = parent.createDiv(c('input-container'));
     matchInputContainer.createEl('label', {
       text: isPath ? 'Target folder' : 'Target tag',
       attr: { for: c('path-input') }
     });
     const matchInputWrapper = matchInputContainer.createDiv(c('match-input-wrapper'));
+    const matchButton = matchInputWrapper.createEl('button', {
+      attr: { type: 'button', 'aria-label': isPath ? 'Select folder' : 'Select tag' }
+    });
     if (isPath) {
-      const pathButton = matchInputWrapper.createEl('button', {
-        attr: { type: 'button', 'aria-label': 'Select folder' }
-      });
-      setIcon(pathButton, 'folder');
-      const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
-      pathButton.addEventListener('click', () => {
-        this.suggestModal.selectedItem = null;
-        this.suggestModal.items = folders;
-        this.suggestModal.callback = (folder: TFolder) => {
-          matchInput.value = folder.path;
-        };
-        this.suggestModal.open();
-      });
+      setIcon(matchButton, 'folder');
     } else {
-      const tagButton = matchInputWrapper.createEl('button', {
-        attr: { type: 'button', 'aria-label': 'Select tag' }
-      });
-      setIcon(tagButton, 'hashtag');
-      const tags: string[] = Object.keys((this.app.metadataCache as any).getTags());
-      tagButton.addEventListener('click', () => {
-        this.suggestModal.selectedItem = null;
-        this.suggestModal.items = tags;
-        this.suggestModal.callback = (tag: string) => {
-          matchInput.value = tag;
-        };
-        this.suggestModal.open();
-      });
+      setIcon(matchButton, 'hashtag');
     }
     const matchInput = matchInputWrapper.createEl('input', {
-      attr: { placeholder: 'Folder', type: 'text', id: c('path-input') }
+      attr: { placeholder: isPath ? 'Folder' : 'Tag', type: 'text', id: c('path-input') }
     });
-    matchInput.value = isPath ? (this.updatedClassMatch as ClassPath).path : (this.updatedClassMatch as ClassTag).tag;
-    matchInput.addEventListener('change', () => {
-      if (isPath) {
-        (this.updatedClassMatch as ClassPath).path = matchInput.value;
-      } else {
-        (this.updatedClassMatch as ClassTag).tag = matchInput.value;
-      }
-    });
+    matchInput.value = value;
 
+    return { matchButton, matchInput };
+  }
+
+  private renderScopeDropdown(parent: HTMLElement): void {
     // Render scope dropdown
-    const scopeDropdownContainer = this.contentEl.createDiv(c('input-container'));
+    const scopeDropdownContainer = parent.createDiv(c('input-container'));
     scopeDropdownContainer.createEl('label', {
       text: 'Class scope',
       attr: { for: c('scope-input') }
@@ -114,9 +149,11 @@ export class ManageMatchModal extends Modal {
     scopeSelect.addEventListener('change', (event: Event) => {
       this.updatedClassMatch.scope = (event.target as HTMLSelectElement).value as ClassMatchScope;
     });
+  }
 
+  private renderClassInput(parent: HTMLElement): void {
     // Render class input
-    const classInputContainer = this.contentEl.createDiv(c('input-container'));
+    const classInputContainer = parent.createDiv(c('input-container'));
     classInputContainer.createEl('label', {
       text: 'New class(es)',
       attr: { for: c('class-input') }
@@ -125,15 +162,22 @@ export class ManageMatchModal extends Modal {
     const classInput = classInputWrapper.createEl('input', {
       attr: { placeholder: 'class1, class2', type: 'text', id: c('class-input') }
     });
+    classInput.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter' && classInput.value) {
+        this.addClasses(classInput.value);
+      }
+    });
     const addClassesButton = classInputWrapper.createEl('button', { text: 'Add' });
     addClassesButton.addEventListener('click', () => {
       if (classInput.value) {
         this.addClasses(classInput.value);
       }
     });
+  }
 
+  private renderClasses(parent: HTMLElement): void {
     // Render classes
-    const classListContainer = this.contentEl.createDiv(c('class-list-container'));
+    const classListContainer = parent.createDiv(c('class-list-container'));
     classListContainer.createEl('h3', { text: 'Classes' });
     const classList = classListContainer.createEl('ul', { cls: c('class-list') });
     for (let i = 0; i < this.updatedClassMatch.classes.length; i++) {
@@ -150,11 +194,11 @@ export class ManageMatchModal extends Modal {
         this.display();
       });
     }
+  }
 
-    this.contentEl.createEl('hr');
-
+  private renderControls(parent: HTMLElement): void {
     // Render controls
-    const controlsContainer = this.contentEl.createDiv(c('controls'));
+    const controlsContainer = parent.createDiv(c('controls'));
     const saveButton = controlsContainer.createEl('button', { cls: 'mod-cta', text: 'Save', attr: { type: 'button' } });
     saveButton.addEventListener('click', async () => {
       await this.save(this.classMatch, this.updatedClassMatch, this.group);
@@ -164,10 +208,5 @@ export class ManageMatchModal extends Modal {
     cancelButton.addEventListener('click', () => {
       this.close();
     });
-  }
-
-  addClasses(classes: string): void {
-    this.updatedClassMatch.classes = [...getClassList(classes), ...this.updatedClassMatch.classes];
-    this.display();
   }
 }

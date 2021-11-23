@@ -53,6 +53,11 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     const pathInput = inputContainer.createEl('input', {
       attr: { placeholder: 'Folder', type: 'text' }
     });
+    pathInput.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter' && pathInput.value) {
+        this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Preview, classes: [] });
+      }
+    });
 
     const addPathButton = inputContainer.createEl('button', {
       text: 'Add Path',
@@ -74,6 +79,11 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     const tagInput = inputContainer.createEl('input', {
       attr: { placeholder: '#Tag', type: 'text' }
     });
+    tagInput.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter' && tagInput.value) {
+        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Preview, classes: [] });
+      }
+    });
 
     const addTagButton = inputContainer.createEl('button', {
       text: 'Add Tag',
@@ -94,6 +104,11 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
 
     const groupInput = inputContainer.createEl('input', {
       attr: { placeholder: 'Group name', type: 'text' }
+    });
+    groupInput.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter' && groupInput.value) {
+        this.addGroup(groupInput.value);
+      }
     });
 
     const addGroupButton = inputContainer.createEl('button', {
