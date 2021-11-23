@@ -72,6 +72,13 @@ export class ManageMatchModal extends Modal {
       attr: { placeholder: 'Folder', type: 'text', id: c('path-input') }
     });
     matchInput.value = isPath ? (this.updatedClassMatch as ClassPath).path : (this.updatedClassMatch as ClassTag).tag;
+    matchInput.addEventListener('change', () => {
+      if (isPath) {
+        (this.updatedClassMatch as ClassPath).path = matchInput.value;
+      } else {
+        (this.updatedClassMatch as ClassTag).tag = matchInput.value;
+      }
+    });
 
     // Render scope dropdown
     const scopeDropdownContainer = this.contentEl.createDiv(c('input-container'));
