@@ -1,3 +1,5 @@
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=OfficerHalf_obsidian-auto-class&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=OfficerHalf_obsidian-auto-class)
+
 ## Auto Class
 
 An Obsidian plugin to automatically apply CSS classes to the markdown view as if you had added them in a `cssClasses` YAML key, based on a note's path and tags. Combine this with CSS snippets targeting a CSS class and you can have different snippets applied to different paths in a single vault without having to add any HTML or CSS classes yourself.
