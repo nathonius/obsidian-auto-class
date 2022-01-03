@@ -42,8 +42,8 @@ export class AutoClassPlugin extends Plugin {
       this.removePreviousClasses(view);
       let matches: Array<ClassPath | ClassTag> = [];
       let container: Element;
-      if (this.isPreivewMode(view)) {
-        matches = this.getMatches(view, allClasses, ClassMatchScope.Preview);
+      if (this.isReadMode(view)) {
+        matches = this.getMatches(view, allClasses, ClassMatchScope.Read);
         container = this.getPreviewContainer(view);
       } else if (this.isEditMode(view)) {
         matches = this.getMatches(view, allClasses, ClassMatchScope.Edit);
@@ -83,7 +83,7 @@ export class AutoClassPlugin extends Plugin {
   /**
    * Returns true if a view is in preview mode
    */
-  private isPreivewMode(view: MarkdownView): boolean {
+  private isReadMode(view: MarkdownView): boolean {
     return view.getMode() === 'preview';
   }
 

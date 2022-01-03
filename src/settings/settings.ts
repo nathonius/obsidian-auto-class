@@ -55,7 +55,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     pathInput.addEventListener('keyup', (event) => {
       if (event.key === 'Enter' && pathInput.value) {
-        this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Preview, classes: [] });
+        this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Read, classes: [] });
       }
     });
 
@@ -65,7 +65,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     addPathButton.addEventListener('click', () => {
       if (pathInput.value) {
-        this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Preview, classes: [] });
+        this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Read, classes: [] });
       }
     });
   }
@@ -81,7 +81,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     tagInput.addEventListener('keyup', (event) => {
       if (event.key === 'Enter' && tagInput.value) {
-        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Preview, classes: [] });
+        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Read, classes: [] });
       }
     });
 
@@ -91,7 +91,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     addTagButton.addEventListener('click', () => {
       if (tagInput.value) {
-        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Preview, classes: [] });
+        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Read, classes: [] });
       }
     });
   }
@@ -242,7 +242,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       cls: c('match-list-control'),
       attr: { 'aria-label': 'Edit', role: 'button' }
     });
-    setIcon(editButton, 'pencil');
+    setIcon(editButton, 'gear');
     editButton.addEventListener('click', () => {
       this.beginEditMatch(match, group);
     });
@@ -443,11 +443,11 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private setScopeIcon(currentScope: ClassMatchScope, scopeEl: HTMLElement): void {
     switch (currentScope) {
-      case ClassMatchScope.Preview:
-        setIcon(scopeEl, 'lines-of-text');
+      case ClassMatchScope.Read:
+        setIcon(scopeEl, 'reading-glasses');
         break;
       case ClassMatchScope.Edit:
-        setIcon(scopeEl, 'code-glyph');
+        setIcon(scopeEl, 'pencil');
         break;
       case ClassMatchScope.Both:
         setIcon(scopeEl, 'documents');

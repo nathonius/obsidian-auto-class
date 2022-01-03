@@ -1,5 +1,5 @@
 export enum ClassMatchScope {
-  Preview = 'Preview',
+  Read = 'Read',
   Edit = 'Edit',
-  Both = 'Preview & Edit'
+  Both = 'Read & Edit'
 }
