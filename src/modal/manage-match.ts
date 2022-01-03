@@ -126,10 +126,10 @@ export class ManageMatchModal extends Modal {
       attr: { id: c('scope-input') }
     });
     const previewOption = scopeSelect.createEl('option', {
-      text: ClassMatchScope.Preview,
-      attr: { value: ClassMatchScope.Preview }
+      text: ClassMatchScope.Read,
+      attr: { value: ClassMatchScope.Read }
     });
-    if (this.updatedClassMatch.scope === ClassMatchScope.Preview) {
+    if (this.updatedClassMatch.scope === ClassMatchScope.Read) {
       previewOption.selected = true;
     }
     const editOption = scopeSelect.createEl('option', {
