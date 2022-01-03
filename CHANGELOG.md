@@ -1,3 +1,14 @@
+# 2.2.0
+
+## Features
+
+- All references to "preview mode" changed to "read mode" for v13 update
+- Updated icons for read and edit scopes to match the glasses and pencil icons used in the UI by default
+
+## Fixes
+
+- Tags in frontmatter are supported
+
 # 2.1.0
 
 ## Features
