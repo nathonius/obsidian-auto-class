@@ -1,4 +1,4 @@
-import { MarkdownView, Plugin } from 'obsidian';
+import { getAllTags, MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
 import { ClassMatchScope } from './enum';
 import { AutoClassPluginSettings, ClassPath, ClassTag } from './interfaces';
@@ -103,7 +103,8 @@ export class AutoClassPlugin extends Plugin {
     allClasses: Array<ClassPath | ClassTag>,
     scope: ClassMatchScope
   ): Array<ClassPath | ClassTag> {
-    const viewTags = (this.app.metadataCache.getFileCache(view.file).tags || []).map((meta) => meta.tag);
+    const fileCache = this.app.metadataCache.getFileCache(view.file);
+    const viewTags = getAllTags(fileCache);
     return allClasses.filter((pathOrTag) => {
       if (pathOrTag.scope !== scope && pathOrTag.scope !== ClassMatchScope.Both) {
         return false;
