@@ -7,7 +7,8 @@ import { AutoClassPluginSettingsTab } from './settings/settings';
 import { isClassGroup, isClassPath, isClassTag } from './util';
 
 export class AutoClassPlugin extends Plugin {
-  appliedClasses = new WeakMap<MarkdownView, string[]>();
+  appliedViewClasses = new WeakMap<MarkdownView, string[]>();
+  appliedGlobalClasses: string[] = [];
   settings: AutoClassPluginSettings = DEFAULT_SETTINGS;
 
   async onload() {
@@ -16,7 +17,7 @@ export class AutoClassPlugin extends Plugin {
     await migrate(this);
 
     this.addSettingTab(new AutoClassPluginSettingsTab(this.app, this));
-    this.registerEvent(this.app.workspace.on('layout-change', this.handleLayoutChange.bind(this)));
+    this.registerEvent(this.app.workspace.on('active-leaf-change', this.handleLayoutChange.bind(this)));
   }
 
   onunload() {
@@ -33,25 +34,33 @@ export class AutoClassPlugin extends Plugin {
     if (!activeViews) {
       return;
     }
+    const globalMatches: Array<ClassPath | ClassTag> = [];
 
     // Flatten groups into a single array
     const allClasses = this.settings.matches.flatMap((p) => (isClassGroup(p) ? p.members : p));
-
     // Remove and apply classes for each applicable view
     activeViews.forEach((view) => {
       this.removePreviousClasses(view);
-      let matches: Array<ClassPath | ClassTag> = [];
+      let allMatches: Array<ClassPath | ClassTag> = [];
       let container: Element;
       if (this.isReadMode(view)) {
-        matches = this.getMatches(view, allClasses, ClassMatchScope.Read);
+        allMatches = this.getMatches(view, allClasses, ClassMatchScope.Read);
         container = this.getPreviewContainer(view);
       } else if (this.isEditMode(view)) {
-        matches = this.getMatches(view, allClasses, ClassMatchScope.Edit);
+        allMatches = this.getMatches(view, allClasses, ClassMatchScope.Edit);
         container = this.getEditContainer(view);
       }
-      const classes: string[] = matches.flatMap((match) => match.classes);
+      const viewMatches: Array<ClassPath | ClassTag> = allMatches.filter(
+        (match) => match.scope !== ClassMatchScope.Global
+      );
+      globalMatches.push(...allMatches.filter((match) => match.scope === ClassMatchScope.Global));
+      const classes: string[] = viewMatches.flatMap((match) => match.classes);
       this.applyClasses(classes, view, container);
     });
+
+    // Apply global classes
+    this.removePreviousGlobalClasses();
+    this.applyGlobalClasses(globalMatches.flatMap((match) => match.classes));
   }
 
   /**
@@ -106,7 +115,11 @@ export class AutoClassPlugin extends Plugin {
     const fileCache = this.app.metadataCache.getFileCache(view.file);
     const viewTags = getAllTags(fileCache);
     return allClasses.filter((pathOrTag) => {
-      if (pathOrTag.scope !== scope && pathOrTag.scope !== ClassMatchScope.Both) {
+      if (
+        pathOrTag.scope !== scope &&
+        pathOrTag.scope !== ClassMatchScope.Both &&
+        pathOrTag.scope !== ClassMatchScope.Global
+      ) {
         return false;
       }
       if (isClassPath(pathOrTag)) {
@@ -124,7 +137,19 @@ export class AutoClassPlugin extends Plugin {
    */
   private applyClasses(classes: string[], view: MarkdownView, container: Element): void {
     container.addClasses(classes);
-    this.appliedClasses.set(view, classes);
+    this.appliedViewClasses.set(view, classes);
+  }
+
+  /**
+   * Removes previous classes from the body element
+   * and adds the new ones
+   */
+  private applyGlobalClasses(classes: string[]): void {
+    const container = this.getGlobalContainer();
+    if (classes && classes.length > 0) {
+      container.addClasses(classes);
+      this.appliedGlobalClasses.push(...classes);
+    }
   }
 
   /**
@@ -134,25 +159,35 @@ export class AutoClassPlugin extends Plugin {
   private removePreviousClasses(view: MarkdownView): void {
     const previewContainer = this.getPreviewContainer(view);
     const editContainer = this.getEditContainer(view);
-    const classes = this.appliedClasses.get(view);
+    const classes = this.appliedViewClasses.get(view);
     if (classes && previewContainer) {
       previewContainer.removeClasses(classes);
     }
     if (classes && editContainer) {
       editContainer.removeClasses(classes);
     }
-    this.appliedClasses.delete(view);
+    this.appliedViewClasses.delete(view);
+  }
+
+  private removePreviousGlobalClasses(): void {
+    const container = this.getGlobalContainer();
+    container.removeClasses(this.appliedGlobalClasses);
+    this.appliedGlobalClasses = [];
   }
 
   /**
    * Remove all applied classes from all views
    */
   private removeAllClasses() {
+    // Remove global classes
+    this.getGlobalContainer().removeClasses(this.appliedGlobalClasses);
+
+    // Remove view classes
     const leaves = this.app.workspace.getLeavesOfType('markdown');
     leaves.forEach((leaf) => {
       const view = leaf.view;
       if (view instanceof MarkdownView) {
-        const applied = this.appliedClasses.get(view);
+        const applied = this.appliedViewClasses.get(view);
         if (applied) {
           const previewContainer = this.getPreviewContainer(view);
           const editContainer = this.getEditContainer(view);
@@ -179,5 +214,12 @@ export class AutoClassPlugin extends Plugin {
    */
   private getEditContainer(view: MarkdownView): Element {
     return view.contentEl.querySelector('.markdown-source-view');
+  }
+
+  /**
+   * Get the body element to apply global classes
+   */
+  private getGlobalContainer(): Element {
+    return document.querySelector('body');
   }
 }

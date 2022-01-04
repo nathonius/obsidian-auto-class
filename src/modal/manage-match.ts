@@ -146,8 +146,18 @@ export class ManageMatchModal extends Modal {
     if (this.updatedClassMatch.scope === ClassMatchScope.Both) {
       bothOption.selected = true;
     }
+    const globalOption = scopeSelect.createEl('option', {
+      text: ClassMatchScope.Global,
+      attr: { value: ClassMatchScope.Global }
+    });
+    if (this.updatedClassMatch.scope === ClassMatchScope.Global) {
+      globalOption.selected = true;
+    }
     scopeSelect.addEventListener('change', (event: Event) => {
       this.updatedClassMatch.scope = (event.target as HTMLSelectElement).value as ClassMatchScope;
+    });
+    parent.createEl('p', {
+      text: 'Classes with read scope are applied only to the reading view, while classes with the edit scope are applied only to the edit view. Classes with the global scope are applied to the body element and affect the entire app, not just the markdown view.'
     });
   }
 

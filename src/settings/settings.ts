@@ -442,16 +442,22 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * Sets the correct icon on the scopeEl based on the current scope
    */
   private setScopeIcon(currentScope: ClassMatchScope, scopeEl: HTMLElement): void {
+    let icon = '';
+    // TODO: replace this with a map of the enum to the icon value
     switch (currentScope) {
       case ClassMatchScope.Read:
-        setIcon(scopeEl, 'reading-glasses');
+        icon = 'reading-glasses';
         break;
       case ClassMatchScope.Edit:
-        setIcon(scopeEl, 'pencil');
+        icon = 'pencil';
         break;
       case ClassMatchScope.Both:
-        setIcon(scopeEl, 'documents');
+        icon = 'documents';
+        break;
+      case ClassMatchScope.Global:
+        icon = 'dot-network';
         break;
     }
+    setIcon(scopeEl, icon);
   }
 }
