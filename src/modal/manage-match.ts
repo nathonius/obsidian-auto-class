@@ -99,7 +99,11 @@ export class ManageMatchModal extends Modal {
     });
     const matchInputWrapper = matchInputContainer.createDiv(c('match-input-wrapper'));
     const matchButton = matchInputWrapper.createEl('button', {
-      attr: { type: 'button', 'aria-label': isPath ? 'Select folder' : 'Select tag' }
+      attr: {
+        type: 'button',
+        'aria-label': isPath ? 'Select folder' : 'Select tag',
+        class: 'auto-class-manage-match__match-input-button'
+      }
     });
     if (isPath) {
       setIcon(matchButton, 'folder');
