@@ -4,7 +4,7 @@ import { ClassMatchScope } from './enum';
 import { AutoClassPluginSettings, ClassPath, ClassTag } from './interfaces';
 import { migrate } from './migrations';
 import { AutoClassPluginSettingsTab } from './settings/settings';
-import { isClassGroup, isClassPath, isClassTag } from './util';
+import { isClassGroup, isClassPath, isClassTag, matchPathGlob } from './util';
 
 export class AutoClassPlugin extends Plugin {
   appliedClasses = new WeakMap<MarkdownView, string[]>();
@@ -110,7 +110,8 @@ export class AutoClassPlugin extends Plugin {
         return false;
       }
       if (isClassPath(pathOrTag)) {
-        return view.file.path.startsWith(pathOrTag.path);
+        // return view.file.path.startsWith(pathOrTag.path);
+        return matchPathGlob(view.file.path, pathOrTag.path);
       } else if (isClassTag(pathOrTag)) {
         return viewTags.includes(pathOrTag.tag);
       }
