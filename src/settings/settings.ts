@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, setIcon, TFolder } from 'obsidian';
+import { App, PluginSettingTab, setIcon, TFolder, Setting } from 'obsidian';
 import Sortable from 'sortablejs';
 import { ClassMatchScope } from '../enum';
 import { SuggestModal } from '../modal/suggest';
@@ -39,6 +39,8 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     this.renderGroupInput(this.containerEl);
     this.containerEl.createEl('h3', { text: 'Paths & Tags' });
     this.renderPathList(this.containerEl, this.plugin.settings);
+    this.containerEl.createEl('h3', { text: 'Advanced' });
+    this.renderGlobToggle(this.containerEl);
   }
 
   /**
@@ -118,6 +120,31 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     addGroupButton.addEventListener('click', () => {
       this.addGroup(groupInput.value);
     });
+  }
+
+  /**
+   * Render the toggle for whether to match paths using globbing
+   */
+  private renderGlobToggle(parent: HTMLElement): void {
+    const toggleContainer = parent.createDiv(c('toggle-container'));
+    const settingName = 'Match folder paths using glob syntax';
+    const settingDescriptionText =
+      'To also match subfolders, add <code>/**</code> to the end of the path, e.g. <code>example/**</code> to match <code>example/subfolder</code>. <br> <strong>Windows users:</strong> Use forward slash <code>/</code> only as path separators.';
+    const settingDescriptionSpan = document.createElement('span');
+    const settingDescription = new DocumentFragment();
+
+    settingDescriptionSpan.innerHTML = settingDescriptionText;
+    settingDescription.append(settingDescriptionSpan);
+
+    new Setting(toggleContainer)
+      .setName(settingName)
+      .setDesc(settingDescription)
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.usePathGlob).onChange(async (value) => {
+          this.plugin.settings.usePathGlob = value;
+          await this.plugin.saveSettings();
+        });
+      });
   }
 
   /**

@@ -110,8 +110,11 @@ export class AutoClassPlugin extends Plugin {
         return false;
       }
       if (isClassPath(pathOrTag)) {
-        // return view.file.path.startsWith(pathOrTag.path);
-        return matchPathGlob(view.file.path, pathOrTag.path);
+        if (this.settings.usePathGlob === true) {
+          return matchPathGlob(view.file.path, pathOrTag.path);
+        } else {
+          return view.file.path.startsWith(pathOrTag.path);
+        }
       } else if (isClassTag(pathOrTag)) {
         return viewTags.includes(pathOrTag.tag);
       }
