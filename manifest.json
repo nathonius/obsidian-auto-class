@@ -1,7 +1,7 @@
 {
   "id": "auto-class",
   "name": "Auto Class",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "minAppVersion": "0.13.11",
   "description": "Automatically apply CSS classes to the markdown view based on a note's path and tags.",
   "author": "OfficerHalf",

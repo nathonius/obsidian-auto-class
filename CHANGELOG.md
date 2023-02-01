@@ -1,3 +1,9 @@
+# 2.3.0
+
+## Features
+
+- Glob matching support. Contributed by @rliugorilla!
+
 # 2.2.0
 
 ## Features

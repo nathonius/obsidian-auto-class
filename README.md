@@ -10,7 +10,7 @@ Install from the community plugin registry under the name Auto Class, by using t
 
 ### Use
 
-Classes can be applied based on a note's path or tags. In settings, configure a folder path or tag and the classes to apply to the children of that folder or the files with that tag
+Classes can be applied based on a note's path or tags. In settings, configure a folder path or tag and the classes to apply to the children of that folder or the files with that tag. For advanced use-cases, enable glob matching in settings.
 
 ![AutoClass](doc/screenshot.png)
 
