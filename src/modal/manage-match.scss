@@ -15,6 +15,10 @@
       flex-grow: 1;
     }
   }
+  &__match-input-button {
+    margin-left: 0;
+    margin-right: 8px;
+  }
   &__class-input-wrapper {
     display: flex;
     align-items: center;
