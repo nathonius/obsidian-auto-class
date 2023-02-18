@@ -1,7 +1,7 @@
-import esbuild from 'esbuild';
-import process from 'process';
-import { join } from 'path';
 import { copyFileSync } from 'fs';
+import esbuild from 'esbuild';
+import { join } from 'path';
+import process from 'process';
 import { sassPlugin } from 'esbuild-sass-plugin';
 
 const banner = `/*

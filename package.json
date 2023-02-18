@@ -19,21 +19,21 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^16.11.1",
-    "@types/sortablejs": "^1.10.7",
-    "@typescript-eslint/eslint-plugin": "^5.2.0",
-    "@typescript-eslint/parser": "^5.2.0",
-    "esbuild": "0.13.8",
-    "esbuild-sass-plugin": "^1.7.0",
-    "eslint": "^8.1.0",
-    "eslint-config-prettier": "^8.3.0",
+    "@types/node": "^16.18.12",
+    "@types/sortablejs": "^1.15.0",
+    "@typescript-eslint/eslint-plugin": "^5.52.0",
+    "@typescript-eslint/parser": "^5.52.0",
+    "esbuild": "^0.14.54",
+    "esbuild-sass-plugin": "^1.8.2",
+    "eslint": "^8.34.0",
+    "eslint-config-prettier": "^8.6.0",
     "husky": "^7.0.4",
     "lint-staged": "^11.2.6",
-    "obsidian": "^0.13.11",
-    "prettier": "^2.4.1",
-    "sass": "^1.43.4",
-    "tslib": "2.3.1",
-    "typescript": "4.4.4"
+    "obsidian": "^1.1.1",
+    "prettier": "^2.8.4",
+    "sass": "^1.58.3",
+    "tslib": "^2.3.1",
+    "typescript": "^4.4.4"
   },
   "lint-staged": {
     "*.ts": "eslint --cache --fix",
@@ -41,6 +41,6 @@
   },
   "dependencies": {
     "minimatch": "^6.1.6",
-    "sortablejs": "^1.14.0"
+    "sortablejs": "^1.15.0"
   }
 }

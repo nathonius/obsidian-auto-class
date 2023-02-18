@@ -17,3 +17,6 @@ styles.css
 data.json
 
 .eslintcache
+
+# history files
+**/.history
