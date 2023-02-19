@@ -1,13 +1,15 @@
-import { App, PluginSettingTab, setIcon, TFolder, Setting } from 'obsidian';
-import Sortable from 'sortablejs';
-import { ClassMatchScope } from '../enum';
-import { SuggestModal } from '../modal/suggest';
-import { ManageMatchModal } from '../modal/manage-match';
-import { AutoClassPluginSettings, ClassPath, ClassGroup, ClassTag } from '../interfaces';
-import { AutoClassPlugin } from '../plugin';
-import { ConfirmModal } from '../modal/confirm';
-import { EditNameModal } from '../modal/edit-name';
+import { App, PluginSettingTab, Setting, TFolder, setIcon } from 'obsidian';
+import { AutoClassPluginSettings, ClassGroup, ClassPath, ClassTag } from '../interfaces';
 import { className, isClassGroup, isClassPath } from '../util';
+
+import { AutoClassPlugin } from '../plugin';
+import { ClassMatchScope } from '../enum';
+import { ConfirmModal } from '../modal/confirm';
+import { DEFAULT_SETTINGS } from 'src/constants';
+import { EditNameModal } from '../modal/edit-name';
+import { ManageMatchModal } from '../modal/manage-match';
+import Sortable from 'sortablejs';
+import { SuggestModal } from '../modal/suggest';
 
 const c = className('auto-class-settings');
 
@@ -41,6 +43,8 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     this.renderPathList(this.containerEl, this.plugin.settings);
     this.containerEl.createEl('h3', { text: 'Advanced' });
     this.renderGlobToggle(this.containerEl);
+    this.renderYAMLToggle(this.containerEl);
+    if (this.plugin.settings.writeToYAML) this.renderYAMLAttribute(this.containerEl);
   }
 
   /**
@@ -147,6 +151,59 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       });
   }
 
+  private renderYAMLToggle(parent: HTMLElement): void {
+    const toggleContainer = parent.createDiv(c('toggle-container'));
+    const settingName = 'Insert YAML frontmatter';
+    const settingDescriptionText = 'Use YAML frontmatter rather than modifying the HTML';
+    const settingDescriptionSpan = document.createElement('span');
+    const settingDescription = new DocumentFragment();
+
+    settingDescriptionSpan.innerHTML = settingDescriptionText;
+    settingDescription.append(settingDescriptionSpan);
+
+    new Setting(toggleContainer)
+      .setName(settingName)
+      .setDesc(settingDescription)
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.writeToYAML).onChange(async (value) => {
+          this.plugin.settings.writeToYAML = value;
+          await this.plugin.saveSettings();
+          this.display();
+        });
+      });
+  }
+
+  private renderYAMLAttribute(parent: HTMLElement): void {
+    const inputContainer = parent.createDiv(c('input-container'));
+    const settingName = 'YAML attribute name';
+    const settingDescriptionText = 'The name of the YAML attribute to use when inserting YAML frontmatter.';
+    const settingDescriptionSpan = document.createElement('span');
+    const settingDescription = new DocumentFragment();
+
+    settingDescriptionSpan.innerHTML = settingDescriptionText;
+    settingDescription.append(settingDescriptionSpan);
+
+    new Setting(inputContainer)
+      .setName(settingName)
+      .setDesc(settingDescription)
+      .addTextArea((text) => {
+        if (this.plugin.settings.yamlAttribute !== DEFAULT_SETTINGS.yamlAttribute)
+          text.setValue(this.plugin.settings.yamlAttribute);
+
+        text.setPlaceholder(DEFAULT_SETTINGS.yamlAttribute).onChange(async (value) => {
+          // only allow letters, numbers, dashes, and underscores
+          this.plugin.settings.yamlAttribute = value.replace(/[^a-zA-Z0-9-_]/g, '') || null;
+          // if we changed the attribute name, we need to update settings view
+          if (value && this.plugin.settings.yamlAttribute !== value) {
+            text.setValue(this.plugin.settings.yamlAttribute);
+            return;
+          }
+          // otherwise use the default if the user cleared the field
+          this.plugin.settings.yamlAttribute ??= DEFAULT_SETTINGS.yamlAttribute;
+          await this.plugin.saveSettings();
+        });
+      });
+  }
   /**
    * Render all paths and groups
    */
