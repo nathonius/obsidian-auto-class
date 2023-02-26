@@ -40,7 +40,9 @@
     "*.{ts,scss}": "prettier --write"
   },
   "dependencies": {
+    "htm": "^3.1.1",
     "minimatch": "^6.2.0",
+    "preact": "^10.12.1",
     "sortablejs": "^1.15.0"
   }
 }

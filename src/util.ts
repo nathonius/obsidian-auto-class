@@ -1,5 +1,10 @@
 import { ClassPath, ClassGroup, ClassTag } from './interfaces';
 import { minimatch } from 'minimatch';
+import { h, VNode } from 'preact';
+import htm from 'htm';
+
+// Configure preact
+export const html = htm.bind(h) as (strings: TemplateStringsArray, ...values: any[]) => VNode<any>;
 
 export function isClassPath(value: ClassPath | ClassTag | ClassGroup): value is ClassPath {
   return 'path' in value;

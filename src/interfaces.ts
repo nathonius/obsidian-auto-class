@@ -4,6 +4,7 @@ import { ClassMatchScope } from './enum';
 export interface AutoClassPluginSettings {
   matches: Array<ClassPath | ClassTag | ClassGroup>;
   version: string;
+  usePathGlob: boolean;
 }
 
 export interface ClassGroup {
