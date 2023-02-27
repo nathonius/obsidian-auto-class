@@ -1,4 +1,4 @@
-.auto-class-manage-match {
+.auto-class-manage-rule {
   &__modal {
     min-width: 50vw;
   }
@@ -9,13 +9,13 @@
       padding: 0 0 4px 1px;
     }
   }
-  &__match-input-wrapper {
+  &__rule-input-wrapper {
     display: flex;
     input {
       flex-grow: 1;
     }
   }
-  &__match-input-button {
+  &__rule-input-button {
     margin-left: 0;
     margin-right: 8px;
   }

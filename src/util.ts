@@ -1,4 +1,4 @@
-import { ClassPath, ClassGroup, ClassTag } from './interfaces';
+import { ClassPath, ClassGroup, ClassTag, AutoClassRuleGroup, AutoClassRule } from './interfaces';
 import { minimatch } from 'minimatch';
 import { h, VNode } from 'preact';
 import htm from 'htm';
@@ -6,14 +6,27 @@ import htm from 'htm';
 // Configure preact
 export const html = htm.bind(h) as (strings: TemplateStringsArray, ...values: any[]) => VNode<any>;
 
+export function isRuleGroup(value: AutoClassRule | AutoClassRuleGroup): value is AutoClassRuleGroup {
+  return 'members' in value && 'collapsed' in value;
+}
+
+/**
+ * @deprecated
+ */
 export function isClassPath(value: ClassPath | ClassTag | ClassGroup): value is ClassPath {
   return 'path' in value;
 }
 
+/**
+ * @deprecated
+ */
 export function isClassTag(value: ClassPath | ClassTag | ClassGroup): value is ClassTag {
   return 'tag' in value;
 }
 
+/**
+ * @deprecated
+ */
 export function isClassGroup(value: ClassPath | ClassTag | ClassGroup): value is ClassGroup {
   return 'members' in value && 'collapsed' in value;
 }

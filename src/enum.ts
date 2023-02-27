@@ -1,5 +1,9 @@
-export enum ClassMatchScope {
+export enum RuleScope {
   Read = 'Read',
-  Edit = 'Edit',
-  Both = 'Read & Edit'
+  Edit = 'Edit'
+}
+
+export enum RuleTargetType {
+  Path,
+  Tag
 }

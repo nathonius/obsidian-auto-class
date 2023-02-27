@@ -1,10 +1,10 @@
 import { getAllTags, MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
-import { ClassMatchScope } from './enum';
-import { AutoClassPluginSettings, ClassPath, ClassTag } from './interfaces';
+import { RuleScope, RuleTargetType } from './enum';
+import { AutoClassPluginSettings, AutoClassRule } from './interfaces';
 import { migrate } from './migrations';
 import { AutoClassPluginSettingsTab } from './settings/settings';
-import { isClassGroup, isClassPath, isClassTag, matchPathGlob } from './util';
+import { isRuleGroup, matchPathGlob } from './util';
 
 export class AutoClassPlugin extends Plugin {
   appliedClasses = new WeakMap<MarkdownView, string[]>();
@@ -35,21 +35,21 @@ export class AutoClassPlugin extends Plugin {
     }
 
     // Flatten groups into a single array
-    const allClasses = this.settings.matches.flatMap((p) => (isClassGroup(p) ? p.members : p));
+    const allRules = this.settings.rules.flatMap((r) => (isRuleGroup(r) ? r.members : r));
 
     // Remove and apply classes for each applicable view
     activeViews.forEach((view) => {
       this.removePreviousClasses(view);
-      let matches: Array<ClassPath | ClassTag> = [];
+      let matchedRules: AutoClassRule[] = [];
       let container: Element;
       if (this.isReadMode(view)) {
-        matches = this.getMatches(view, allClasses, ClassMatchScope.Read);
+        matchedRules = this.getMatches(view, allRules, RuleScope.Read);
         container = this.getPreviewContainer(view);
       } else if (this.isEditMode(view)) {
-        matches = this.getMatches(view, allClasses, ClassMatchScope.Edit);
+        matchedRules = this.getMatches(view, allRules, RuleScope.Edit);
         container = this.getEditContainer(view);
       }
-      const classes: string[] = matches.flatMap((match) => match.classes);
+      const classes: string[] = matchedRules.flatMap((match) => match.classes);
       this.applyClasses(classes, view, container);
     });
   }
@@ -98,25 +98,23 @@ export class AutoClassPlugin extends Plugin {
    * Given a view, a configured set of paths and tags, and the
    * scope to match to, return all paths and tags that match
    */
-  private getMatches(
-    view: MarkdownView,
-    allClasses: Array<ClassPath | ClassTag>,
-    scope: ClassMatchScope
-  ): Array<ClassPath | ClassTag> {
+  private getMatches(view: MarkdownView, rules: AutoClassRule[], currentScope: RuleScope): AutoClassRule[] {
     const fileCache = this.app.metadataCache.getFileCache(view.file);
     const viewTags = getAllTags(fileCache);
-    return allClasses.filter((pathOrTag) => {
-      if (pathOrTag.scope !== scope && pathOrTag.scope !== ClassMatchScope.Both) {
+    return rules.filter((rule) => {
+      // This rule is for a different scope
+      if (!rule.scope[currentScope]) {
         return false;
       }
-      if (isClassPath(pathOrTag)) {
+
+      if (rule.targetType === RuleTargetType.Path) {
         if (this.settings.usePathGlob === true) {
-          return matchPathGlob(view.file.path, pathOrTag.path);
+          return matchPathGlob(view.file.path, rule.target);
         } else {
-          return view.file.path.startsWith(pathOrTag.path);
+          return view.file.path.startsWith(rule.target);
         }
-      } else if (isClassTag(pathOrTag)) {
-        return viewTags.includes(pathOrTag.tag);
+      } else if (rule.targetType === RuleTargetType.Tag) {
+        return viewTags.includes(rule.target);
       }
     });
   }

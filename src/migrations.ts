@@ -1,20 +1,33 @@
 import { Notice } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
-import { ClassMatchScope } from './enum';
-import { AutoClassPluginSettings, ClassGroup, ClassMatch } from './interfaces';
+import { RuleScope, RuleTargetType } from './enum';
+import { AutoClassRule, AutoClassRuleGroup, ClassGroup, ClassPath, ClassTag, RuleScopeSetting } from './interfaces';
 import { AutoClassPlugin } from './plugin';
-import { isClassGroup } from './util';
-
-let anyMigration = false;
+import { isClassGroup, isClassPath, isClassTag } from './util';
 
 export async function migrate(plugin: AutoClassPlugin): Promise<void> {
-  if (plugin.settings && plugin.settings.version !== DEFAULT_SETTINGS.version) {
-    // Execute migrations
-    pathsToMatches(plugin.settings);
-    renameScopes(plugin.settings);
+  let anyMigration = false;
 
+  if (plugin.settings && plugin.settings.version !== DEFAULT_SETTINGS.version) {
     // Update version
     plugin.settings.version = DEFAULT_SETTINGS.version;
+
+    // Migrate from classTag / classPath to rules
+    if (plugin.settings.matches) {
+      anyMigration = true;
+      const rules: Array<AutoClassRuleGroup | AutoClassRule> = [];
+      plugin.settings.matches.forEach((m) => {
+        if (isClassGroup(m)) {
+          rules.push(classGroupToRule(m));
+        } else if (isClassPath(m)) {
+          rules.push(classPathToRule(m));
+        } else if (isClassTag(m)) {
+          rules.push(classTagToRule(m));
+        }
+      });
+      plugin.settings.rules = rules;
+      delete plugin.settings.matches;
+    }
 
     // Save settings
     await plugin.saveSettings();
@@ -25,39 +38,51 @@ export async function migrate(plugin: AutoClassPlugin): Promise<void> {
   }
 }
 
-/**
- * Moves old settings from {paths: [...]} to {matches: [...]}
- */
-function pathsToMatches(settings: AutoClassPluginSettings): void {
-  if ('paths' in settings) {
-    anyMigration = true;
-    settings.matches = (settings as any).paths;
-    delete (settings as any).paths;
-  }
-}
-
-/**
- * Renames v12 terminology "preview" mode to v13 term,
- * "read" mode
- */
-function renameScopes(settings: AutoClassPluginSettings): void {
-  const migrateScope = (match: ClassMatch): void => {
-    if ((match.scope as string) === 'Preview') {
-      match.scope = ClassMatchScope.Read;
-      anyMigration = true;
-    } else if ((match.scope as string) === 'Preview & Edit') {
-      match.scope = ClassMatchScope.Both;
-      anyMigration = true;
-    }
+function classGroupToRule(group: ClassGroup): AutoClassRuleGroup {
+  const newGroup: AutoClassRuleGroup = {
+    name: group.name,
+    collapsed: group.collapsed,
+    members: []
   };
 
-  for (let i = 0; i < settings.matches.length; i++) {
-    if (isClassGroup(settings.matches[i])) {
-      (settings.matches[i] as ClassGroup).members.forEach((member) => {
-        migrateScope(member);
-      });
-    } else {
-      migrateScope(settings.matches[i] as ClassMatch);
+  group.members.forEach((m) => {
+    if (isClassPath(m)) {
+      newGroup.members.push(classPathToRule(m));
+    } else if (isClassTag(m)) {
+      newGroup.members.push(classTagToRule(m));
     }
+  });
+
+  return newGroup;
+}
+
+function classPathToRule(match: ClassPath): AutoClassRule {
+  return {
+    name: match.path,
+    classes: match.classes,
+    scope: ruleScopeToRuleScopeSetting(match.scope),
+    target: match.path,
+    targetType: RuleTargetType.Path
+  };
+}
+
+function classTagToRule(match: ClassTag): AutoClassRule {
+  return {
+    name: match.tag,
+    classes: match.classes,
+    scope: ruleScopeToRuleScopeSetting(match.scope),
+    target: match.tag,
+    targetType: RuleTargetType.Tag
+  };
+}
+
+function ruleScopeToRuleScopeSetting(oldScope: RuleScope | 'Read & Edit'): Record<RuleScope, boolean> {
+  const newScope: RuleScopeSetting = { [RuleScope.Edit]: false, [RuleScope.Read]: false };
+  if (oldScope === 'Read & Edit') {
+    newScope[RuleScope.Read] = true;
+    newScope[RuleScope.Edit] = true;
+  } else {
+    newScope[oldScope] = true;
   }
+  return newScope;
 }

@@ -1,25 +1,25 @@
 import { App, PluginSettingTab, setIcon, TFolder, Setting } from 'obsidian';
 import Sortable from 'sortablejs';
-import { ClassMatchScope } from '../enum';
+import { RuleTargetType } from '../enum';
 import { SuggestModal } from '../modal/suggest';
-import { ManageMatchModal } from '../modal/manage-match';
-import { AutoClassPluginSettings, ClassPath, ClassGroup, ClassTag } from '../interfaces';
+import { ManageRuleModal } from '../modal/manage-rule';
+import { AutoClassPluginSettings, AutoClassRule, AutoClassRuleGroup, RuleScopeSetting } from '../interfaces';
 import { AutoClassPlugin } from '../plugin';
 import { ConfirmModal } from '../modal/confirm';
 import { EditNameModal } from '../modal/edit-name';
-import { className, isClassGroup, isClassPath } from '../util';
+import { className, isRuleGroup } from '../util';
 
 const c = className('auto-class-settings');
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
   private readonly folderSuggestModal: SuggestModal = new SuggestModal(this.app);
-  private readonly managePathModal: ManageMatchModal = new ManageMatchModal(this.plugin);
+  private readonly manageRuleModal: ManageRuleModal = new ManageRuleModal(this.plugin);
   private readonly confirmModal: ConfirmModal = new ConfirmModal(this.app);
   private readonly editNameModal: EditNameModal = new EditNameModal(this.app);
 
   constructor(readonly app: App, private readonly plugin: AutoClassPlugin) {
     super(app, plugin);
-    this.managePathModal.save = this.editMatch.bind(this);
+    this.manageRuleModal.save = this.editRule.bind(this);
     this.confirmModal.message =
       'Are you sure you want to delete this group? All configured paths and tags in it will also be deleted.';
   }
@@ -57,7 +57,13 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     pathInput.addEventListener('keyup', (event) => {
       if (event.key === 'Enter' && pathInput.value) {
-        this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Read, classes: [] });
+        this.addRule({
+          name: pathInput.value,
+          target: pathInput.value,
+          targetType: RuleTargetType.Path,
+          scope: { Read: true, Edit: false },
+          classes: []
+        });
       }
     });
 
@@ -67,7 +73,13 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     addPathButton.addEventListener('click', () => {
       if (pathInput.value) {
-        this.addMatch({ path: pathInput.value, scope: ClassMatchScope.Read, classes: [] });
+        this.addRule({
+          name: pathInput.value,
+          target: pathInput.value,
+          targetType: RuleTargetType.Path,
+          scope: { Read: true, Edit: false },
+          classes: []
+        });
       }
     });
   }
@@ -83,7 +95,13 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     tagInput.addEventListener('keyup', (event) => {
       if (event.key === 'Enter' && tagInput.value) {
-        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Read, classes: [] });
+        this.addRule({
+          name: tagInput.value,
+          target: tagInput.value,
+          targetType: RuleTargetType.Tag,
+          scope: { Read: true, Edit: false },
+          classes: []
+        });
       }
     });
 
@@ -93,7 +111,13 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     });
     addTagButton.addEventListener('click', () => {
       if (tagInput.value) {
-        this.addMatch({ tag: tagInput.value, scope: ClassMatchScope.Read, classes: [] });
+        this.addRule({
+          name: tagInput.value,
+          target: tagInput.value,
+          targetType: RuleTargetType.Tag,
+          scope: { Read: true, Edit: false },
+          classes: []
+        });
       }
     });
   }
@@ -151,13 +175,13 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * Render all paths and groups
    */
   private renderPathList(parent: HTMLElement, settings: AutoClassPluginSettings): void {
-    const list = parent.createEl('ul', { cls: c('match-list'), attr: { 'data-index': -1 } });
+    const list = parent.createEl('ul', { cls: c('rule-list'), attr: { 'data-index': -1 } });
     const sortableLists = [list];
-    settings.matches.forEach((match, index) => {
-      if (isClassGroup(match)) {
-        sortableLists.push(this.renderMatchListGroup(list, match, index));
+    settings.rules.forEach((rule, index) => {
+      if (isRuleGroup(rule)) {
+        sortableLists.push(this.renderRuleListGroup(list, rule, index));
       } else {
-        this.renderMatchListItem(list, match, index);
+        this.renderRuleListItem(list, rule, index);
       }
     });
 
@@ -165,16 +189,16 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     sortableLists.forEach((l, index) => {
       new Sortable(l, {
         draggable: `.${c('draggable')}`,
-        handle: `.${c('match-list-drag-handle')}`,
+        handle: `.${c('rule-list-drag-handle')}`,
         group: {
           name: index === 0 ? 'root' : 'group',
           put: (to, _, dragEl) => {
-            const isGroup = dragEl.classList.contains(c('match-group'));
+            const isGroup = dragEl.classList.contains(c('rule-group'));
             const toName = (to.options.group as Sortable.GroupOptions).name;
             return !isGroup || (isGroup && toName === 'root');
           },
           pull: (_, __, dragEl) => {
-            const isGroup = dragEl.classList.contains(c('match-group'));
+            const isGroup = dragEl.classList.contains(c('rule-group'));
             return !isGroup;
           }
         },
@@ -184,7 +208,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
         fallbackOnBody: true,
         invertSwap: true,
         onEnd: (event) => {
-          this.moveClassMatch(event.from, event.to, event.oldIndex, event.newIndex);
+          this.moveRule(event.from, event.to, event.oldIndex, event.newIndex);
         }
       });
     });
@@ -193,20 +217,20 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Render a class path group and its members
    */
-  private renderMatchListGroup(list: HTMLUListElement, group: ClassGroup, groupIndex: number): HTMLUListElement {
+  private renderRuleListGroup(list: HTMLUListElement, group: AutoClassRuleGroup, groupIndex: number): HTMLUListElement {
     const groupItem = list.createEl('li', {
-      cls: [c('match-group'), c('draggable')]
+      cls: [c('rule-group'), c('draggable')]
     });
-    const groupHeader = groupItem.createDiv({ cls: c('match-group-header') });
-    const collapseButton = groupHeader.createSpan({ cls: c('match-group-collapse-button') });
+    const groupHeader = groupItem.createDiv({ cls: c('rule-group-header') });
+    const collapseButton = groupHeader.createSpan({ cls: c('rule-group-collapse-button') });
     setIcon(collapseButton, group.collapsed ? 'up-chevron-glyph' : 'down-chevron-glyph');
     collapseButton.addEventListener('click', () => {
       this.toggleGroupCollapse(group, groupList, collapseButton);
     });
-    groupHeader.createSpan({ text: group.name, cls: c('match-group-name') });
+    groupHeader.createSpan({ text: group.name, cls: c('rule-group-name') });
     const controls = groupHeader.createDiv();
     const editButton = controls.createSpan({
-      cls: c('match-list-control'),
+      cls: c('rule-list-control'),
       attr: { 'aria-label': 'Edit Name', role: 'button' }
     });
     setIcon(editButton, 'pencil');
@@ -214,7 +238,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       this.handleEditGroup(group);
     });
     const deleteButton = controls.createSpan({
-      cls: c('match-list-control'),
+      cls: c('rule-list-control'),
       attr: { 'aria-label': 'Delete Group', role: 'button' }
     });
     setIcon(deleteButton, 'trash');
@@ -222,18 +246,18 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       this.handleDeleteGroup(group);
     });
     const dragHandle = controls.createSpan({
-      cls: [c('match-list-control'), c('match-list-drag-handle')]
+      cls: [c('rule-list-control'), c('rule-list-drag-handle')]
     });
     setIcon(dragHandle, 'three-horizontal-bars');
     const groupList = groupItem.createEl('ul', {
-      cls: c('match-group-list'),
+      cls: c('rule-group-list'),
       attr: { 'data-index': groupIndex }
     });
     if (group.collapsed) {
       groupList.addClass('collapsed');
     }
-    group.members.forEach((groupPath, index) => {
-      this.renderMatchListItem(groupList, groupPath, index, group);
+    group.members.forEach((groupRule, index) => {
+      this.renderRuleListItem(groupList, groupRule, index, group);
     });
     return groupList;
   }
@@ -241,72 +265,72 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Render a path in the main list or in a group
    */
-  private renderMatchListItem(
+  private renderRuleListItem(
     list: HTMLUListElement,
-    match: ClassPath | ClassTag,
+    rule: AutoClassRule,
     index: number,
-    group: ClassGroup | null = null
+    group: AutoClassRuleGroup | null = null
   ): void {
-    const isPath = isClassPath(match);
+    const isPath = rule.targetType === RuleTargetType.Path;
     const listItem = list.createEl('li', {
-      cls: [c('match-list-item'), c('draggable')],
+      cls: [c('rule-list-item'), c('draggable')],
       attr: { 'data-index': index }
     });
-    const matchType = listItem.createSpan({
-      cls: c('match-type'),
+    const ruleType = listItem.createSpan({
+      cls: c('rule-type'),
       attr: { 'aria-label': `Type: ${isPath ? 'Path' : 'Tag'}` }
     });
-    setIcon(matchType, isPath ? 'folder' : 'hashtag');
+    setIcon(ruleType, isPath ? 'folder' : 'hashtag');
     const scope = listItem.createSpan({
-      cls: c('match-scope'),
-      attr: { 'aria-label': `Scope: ${match.scope}` }
+      cls: c('rule-scope'),
+      attr: { 'aria-label': `Scope: ${this.getScopeText(rule.scope)}` }
     });
-    this.setScopeIcon(match.scope, scope);
+    this.setScopeIcon(rule.scope, scope);
 
-    listItem.createSpan({ text: isPath ? match.path : match.tag, cls: c('match-list-path') });
-    const controls = listItem.createSpan({ cls: c('match-list-controls') });
+    listItem.createSpan({ text: rule.target, cls: c('rule-list-path') });
+    const controls = listItem.createSpan({ cls: c('rule-list-controls') });
     const editButton = controls.createSpan({
-      cls: c('match-list-control'),
+      cls: c('rule-list-control'),
       attr: { 'aria-label': 'Edit', role: 'button' }
     });
     setIcon(editButton, 'gear');
     editButton.addEventListener('click', () => {
-      this.beginEditMatch(match, group);
+      this.beginEditRule(rule, group);
     });
     const deleteButton = controls.createSpan({
-      cls: c('match-list-control'),
+      cls: c('rule-list-control'),
       attr: { 'aria-label': 'Delete', role: 'button' }
     });
     setIcon(deleteButton, 'trash');
     deleteButton.addEventListener('click', () => {
-      this.deleteMatch(match, group);
+      this.deleteRule(rule, group);
     });
     const dragHandle = controls.createSpan({
-      cls: [c('match-list-control'), c('match-list-drag-handle')]
+      cls: [c('rule-list-control'), c('rule-list-drag-handle')]
     });
     setIcon(dragHandle, 'three-horizontal-bars');
   }
 
   /**
-   * Called when dropping a dragged match or match group.
+   * Called when dropping a dragged rule or rule group.
    * Saves the new location of the dragged item.
    */
-  private async moveClassMatch(from: HTMLElement, to: HTMLElement, oldIndex: number, newIndex: number): Promise<void> {
+  private async moveRule(from: HTMLElement, to: HTMLElement, oldIndex: number, newIndex: number): Promise<void> {
     const fromIndex = parseInt(from.getAttribute('data-index'));
     const toIndex = parseInt(to.getAttribute('data-index'));
     const fromList =
-      fromIndex !== -1 ? (this.plugin.settings.matches[fromIndex] as ClassGroup) : this.plugin.settings.matches;
-    let toList: ClassGroup | (ClassPath | ClassTag | ClassGroup)[];
+      fromIndex !== -1 ? (this.plugin.settings.rules[fromIndex] as AutoClassRuleGroup) : this.plugin.settings.rules;
+    let toList: AutoClassRuleGroup | (AutoClassRule | AutoClassRuleGroup)[];
     if (fromIndex === toIndex) {
       toList = fromList;
     } else if (toIndex !== -1) {
-      toList = this.plugin.settings.matches[toIndex] as ClassGroup;
+      toList = this.plugin.settings.rules[toIndex] as AutoClassRuleGroup;
     } else {
-      toList = this.plugin.settings.matches;
+      toList = this.plugin.settings.rules;
     }
 
     // Remove from old list
-    const matchOrGroup = !Array.isArray(fromList)
+    const ruleOrGroup = !Array.isArray(fromList)
       ? // Removing from a group
         fromList.members.splice(oldIndex, 1)
       : // Removing from the root list
@@ -315,30 +339,30 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     // Add to new list
     !Array.isArray(toList)
       ? // Adding to a group
-        toList.members.splice(newIndex, 0, matchOrGroup[0] as ClassPath)
+        toList.members.splice(newIndex, 0, ruleOrGroup[0] as AutoClassRule)
       : // Adding to the root list
-        toList.splice(newIndex, 0, ...matchOrGroup);
+        toList.splice(newIndex, 0, ...ruleOrGroup);
     await this.plugin.saveSettings();
     this.display();
   }
 
   /**
-   * Initialize and open the manage path modal
+   * Initialize and open the manage rule modal
    */
-  private beginEditMatch(classPath: ClassPath | ClassTag, group: ClassGroup | null = null): void {
-    this.managePathModal.classMatch = classPath;
-    this.managePathModal.group = group;
-    this.managePathModal.open();
+  private beginEditRule(rule: AutoClassRule, group: AutoClassRuleGroup | null = null): void {
+    this.manageRuleModal.rule = rule;
+    this.manageRuleModal.group = group;
+    this.manageRuleModal.open();
   }
 
   /**
-   * Delete the given match
+   * Delete the given rule
    */
-  private async deleteMatch(classMatch: ClassPath | ClassTag, group: ClassGroup | null = null): Promise<void> {
+  private async deleteRule(rule: AutoClassRule, group: AutoClassRuleGroup | null = null): Promise<void> {
     if (!group) {
-      this.plugin.settings.matches.remove(classMatch);
+      this.plugin.settings.rules.remove(rule);
     } else {
-      group.members.remove(classMatch);
+      group.members.remove(rule);
     }
     await this.plugin.saveSettings();
     this.display();
@@ -347,8 +371,8 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Add a new path
    */
-  private async addMatch(classMatch: ClassPath | ClassTag): Promise<void> {
-    this.plugin.settings.matches.unshift(classMatch);
+  private async addRule(rule: AutoClassRule): Promise<void> {
+    this.plugin.settings.rules.unshift(rule);
     await this.plugin.saveSettings();
     this.display();
   }
@@ -356,14 +380,14 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Passed to the edit group modal for saving
    */
-  private async editMatch(
-    original: ClassPath | ClassTag,
-    updated: ClassPath | ClassTag,
-    group: ClassGroup | null = null
+  private async editRule(
+    original: AutoClassRule,
+    updated: AutoClassRule,
+    group: AutoClassRuleGroup | null = null
   ): Promise<void> {
-    let sourceList = this.plugin.settings.matches;
+    let sourceList = this.plugin.settings.rules;
     if (group !== null) {
-      const sourceGroup = this.plugin.settings.matches.find((p) => p === group) as ClassGroup | undefined;
+      const sourceGroup = this.plugin.settings.rules.find((p) => p === group) as AutoClassRuleGroup | undefined;
       if (sourceGroup) {
         sourceList = sourceGroup.members;
       } else {
@@ -383,7 +407,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private async addGroup(name: string): Promise<void> {
     if (name) {
-      this.plugin.settings.matches.unshift({ name: name, members: [], collapsed: false });
+      this.plugin.settings.rules.unshift({ name: name, members: [], collapsed: false });
       await this.plugin.saveSettings();
       this.display();
     }
@@ -418,7 +442,11 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * DOES NOT re-render the modal, since that shouldn't
    * be necessary.
    */
-  private toggleGroupCollapse(group: ClassGroup, groupList: HTMLElement, collapseButton: HTMLSpanElement): void {
+  private toggleGroupCollapse(
+    group: AutoClassRuleGroup,
+    groupList: HTMLElement,
+    collapseButton: HTMLSpanElement
+  ): void {
     if (group.collapsed) {
       groupList.removeClass('collapsed');
     } else {
@@ -432,7 +460,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Open the edit name modal for the given group
    */
-  private handleEditGroup(group: ClassGroup): void {
+  private handleEditGroup(group: AutoClassRuleGroup): void {
     const editCallback = (newName: string) => {
       group.name = newName;
       this.plugin.saveSettings();
@@ -446,15 +474,15 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Confirms deletion of the given group and all of its children
    */
-  private handleDeleteGroup(group: ClassGroup): void {
+  private handleDeleteGroup(group: AutoClassRuleGroup): void {
     if (group.members.length === 0) {
-      this.plugin.settings.matches.remove(group);
+      this.plugin.settings.rules.remove(group);
       this.plugin.saveSettings();
       this.display();
     } else {
       const responseCallback = (deleteGroup: boolean) => {
         if (deleteGroup) {
-          this.plugin.settings.matches.remove(group);
+          this.plugin.settings.rules.remove(group);
           this.plugin.saveSettings();
           this.display();
         }
@@ -468,17 +496,20 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   /**
    * Sets the correct icon on the scopeEl based on the current scope
    */
-  private setScopeIcon(currentScope: ClassMatchScope, scopeEl: HTMLElement): void {
-    switch (currentScope) {
-      case ClassMatchScope.Read:
-        setIcon(scopeEl, 'reading-glasses');
-        break;
-      case ClassMatchScope.Edit:
-        setIcon(scopeEl, 'pencil');
-        break;
-      case ClassMatchScope.Both:
-        setIcon(scopeEl, 'documents');
-        break;
+  private setScopeIcon(currentScope: RuleScopeSetting, scopeEl: HTMLElement): void {
+    if (currentScope.Edit && currentScope.Read) {
+      setIcon(scopeEl, 'documents');
+    } else if (currentScope.Edit) {
+      setIcon(scopeEl, 'pencil');
+    } else if (currentScope.Read) {
+      setIcon(scopeEl, 'reading-glasses');
     }
+  }
+
+  private getScopeText(scope: RuleScopeSetting): string {
+    const enabledScopes = Object.keys(scope).filter((key: keyof RuleScopeSetting) => {
+      return scope[key] === true;
+    });
+    return enabledScopes.join(', ');
   }
 }

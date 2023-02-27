@@ -18,16 +18,16 @@
     margin-right: 0;
   }
 
-  /* Match list */
-  &__match-list {
+  /* Rule list */
+  &__rule-list {
     list-style: none;
     padding: 0;
     padding-bottom: 10px;
   }
-  &__match-group {
+  &__rule-group {
     min-height: 40px;
   }
-  &__match-group-header {
+  &__rule-group-header {
     display: flex;
     padding: 4px;
     border-radius: 4px;
@@ -36,23 +36,23 @@
       vertical-align: middle;
     }
   }
-  &__match-group-collapse-button {
+  &__rule-group-collapse-button {
     cursor: pointer;
     padding: 0px 4px;
     color: var(--text-faint);
     margin-right: 6px;
   }
-  &__match-group-name {
+  &__rule-group-name {
     flex-grow: 1;
   }
-  &__match-group-list {
+  &__rule-group-list {
     padding-inline-start: 20px;
     &.collapsed {
       max-height: 0px;
       overflow: hidden;
     }
   }
-  &__match-list-item {
+  &__rule-list-item {
     display: flex;
     transition: background-color 150ms ease;
     padding: 4px;
@@ -65,18 +65,18 @@
       background-color: var(--background-primary);
     }
   }
-  &__match-type,
-  &__match-scope {
+  &__rule-type,
+  &__rule-scope {
     padding: 0px 4px;
     color: var(--text-faint);
   }
-  &__match-scope {
+  &__rule-scope {
     margin-right: 6px;
   }
-  &__match-list-path {
+  &__rule-list-path {
     flex-grow: 1;
   }
-  &__match-list-control {
+  &__rule-list-control {
     margin-left: 8px;
     cursor: pointer;
 
@@ -84,7 +84,7 @@
       color: var(--text-accent-hover);
     }
 
-    &.auto-class-settings__match-list-drag-handle {
+    &.auto-class-settings__rule-list-drag-handle {
       cursor: grab;
     }
   }

@@ -87,7 +87,7 @@ export const SettingComponent: FunctionComponent<{
   return html`<div ref=${host} className=${props.className} />`;
 };
 
-export const SettingControl: FunctionComponent<SettingControlProps> = (props) => {
+export const SettingControl: FunctionComponent<SettingControlProps> = () => {
   return null;
 };
 
