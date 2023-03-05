@@ -6,7 +6,7 @@ import { AutoClassPlugin } from '../plugin';
 import { SuggestModal } from './suggest';
 import { FunctionComponent, render } from 'preact';
 import { useCallback, useEffect, useMemo, useState } from 'preact/hooks';
-import { Icon } from '../components/Icon';
+import { IconButton } from '../components/IconButton';
 
 const c = className('auto-class-manage-rule');
 
@@ -149,14 +149,13 @@ const ModalContent: FunctionComponent<{
     <div class=${c('input-container')}>
       <label for=${c('path-input')}>Target ${isPath ? 'folder' : 'tag'}</label>
       <div class=${c('rule-input-wrapper')}>
-        <button
-          type="button"
+        <${IconButton}
           class=${c('rule-input-button')}
-          aria-label="Select ${isPath ? 'folder' : 'tag'}"
           onClick=${handleRuleButton}
+          icon="${isPath ? 'folder' : 'hashtag'}"
         >
-          <${Icon} icon="${isPath ? 'folder' : 'hashtag'}" />
-        </button>
+          Select ${isPath ? 'folder' : 'tag'}
+        </IconButton>
         <input
           type="text"
           placeholder=${isPath ? 'Folder' : 'Tag'}
@@ -194,15 +193,14 @@ const ModalContent: FunctionComponent<{
         ${updatedRule.classes.map(
           (classname, index) => html`<li class=${c('class-list-item')} key="${index}">
             <span>${classname}</span>
-            <button
-              type="button"
+            <${IconButton}
               class=${c('class-list-control')}
-              aria-label="Remove Class"
               data-index="${index}"
               onClick=${handleDeleteClassButton}
+              icon="trash"
             >
-              <${Icon} icon="trash" />
-            </button>
+              Remove Class
+            </IconButton>
           </li>`
         )}
       </ul>
