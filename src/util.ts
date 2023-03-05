@@ -11,21 +11,21 @@ export function isRuleGroup(value: AutoClassRule | AutoClassRuleGroup): value is
 }
 
 /**
- * @deprecated
+ * @deprecated to be removed in v4
  */
 export function isClassPath(value: ClassPath | ClassTag | ClassGroup): value is ClassPath {
   return 'path' in value;
 }
 
 /**
- * @deprecated
+ * @deprecated to be removed in v4
  */
 export function isClassTag(value: ClassPath | ClassTag | ClassGroup): value is ClassTag {
   return 'tag' in value;
 }
 
 /**
- * @deprecated
+ * @deprecated to be removed in v4
  */
 export function isClassGroup(value: ClassPath | ClassTag | ClassGroup): value is ClassGroup {
   return 'members' in value && 'collapsed' in value;

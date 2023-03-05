@@ -26,7 +26,7 @@ export interface AutoClassRule {
 }
 
 /**
- * @deprecated
+ * @deprecated to be removed in v4
  */
 export interface ClassGroup {
   name: string;
@@ -35,7 +35,7 @@ export interface ClassGroup {
 }
 
 /**
- * @deprecated
+ * @deprecated to be removed in v4
  */
 export interface ClassMatch {
   classes: string[];
@@ -43,14 +43,14 @@ export interface ClassMatch {
 }
 
 /**
- * @deprecated
+ * @deprecated to be removed in v4
  */
 export interface ClassPath extends ClassMatch {
   path: string;
 }
 
 /**
- * @deprecated
+ * @deprecated to be removed in v4
  */
 export interface ClassTag extends ClassMatch {
   tag: string;
