@@ -34,9 +34,10 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       text: 'Add a folder path or tag and edit it to add CSS classes. Classes are added to the markdown view container in the appropriate scope (edit/source mode, preview mode, or both). Paths and tags can be grouped for organization.'
     });
 
-    this.renderPathInput(this.containerEl);
-    this.renderTagInput(this.containerEl);
-    this.renderGroupInput(this.containerEl);
+    const inputsWrapper = this.containerEl.createDiv({ cls: c('inputs-wrapper') });
+    this.renderPathInput(inputsWrapper);
+    this.renderTagInput(inputsWrapper);
+    this.renderGroupInput(inputsWrapper);
     this.containerEl.createEl('h3', { text: 'Paths & Tags' });
     this.renderPathList(this.containerEl, this.plugin.settings);
     this.containerEl.createEl('h3', { text: 'Advanced' });
@@ -47,12 +48,11 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * Render input and buttons for new paths
    */
   private renderPathInput(parent: HTMLElement): void {
-    const inputContainer = parent.createDiv({ cls: c('input-container') });
-    const pathButton = inputContainer.createEl('button', { cls: c('folder-button') });
+    const pathButton = parent.createEl('button', { cls: c('folder-button') });
     setIcon(pathButton, 'folder');
     pathButton.addEventListener('click', () => this.handleFolderButton(pathInput));
 
-    const pathInput = inputContainer.createEl('input', {
+    const pathInput = parent.createEl('input', {
       attr: { placeholder: 'Folder', type: 'text' }
     });
     pathInput.addEventListener('keyup', (event) => {
@@ -67,7 +67,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       }
     });
 
-    const addPathButton = inputContainer.createEl('button', {
+    const addPathButton = parent.createEl('button', {
       text: 'Add Path',
       cls: [c('add-button'), 'mod-cta']
     });
@@ -85,12 +85,11 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   }
 
   private renderTagInput(parent: HTMLElement): void {
-    const inputContainer = parent.createDiv({ cls: c('input-container') });
-    const tagButton = inputContainer.createEl('button', { cls: c('path-button') });
+    const tagButton = parent.createEl('button', { cls: c('path-button') });
     setIcon(tagButton, 'hashtag');
     tagButton.addEventListener('click', () => this.handleTagButton(tagInput));
 
-    const tagInput = inputContainer.createEl('input', {
+    const tagInput = parent.createEl('input', {
       attr: { placeholder: '#Tag', type: 'text' }
     });
     tagInput.addEventListener('keyup', (event) => {
@@ -105,7 +104,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       }
     });
 
-    const addTagButton = inputContainer.createEl('button', {
+    const addTagButton = parent.createEl('button', {
       text: 'Add Tag',
       cls: [c('add-button'), 'mod-cta']
     });
@@ -126,9 +125,8 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    * Render input and button for new groups
    */
   private renderGroupInput(parent: HTMLElement): void {
-    const inputContainer = parent.createDiv(c('input-container'));
-
-    const groupInput = inputContainer.createEl('input', {
+    const groupInput = parent.createEl('input', {
+      cls: c('add-group-input'),
       attr: { placeholder: 'Group name', type: 'text' }
     });
     groupInput.addEventListener('keyup', (event) => {
@@ -137,7 +135,7 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
       }
     });
 
-    const addGroupButton = inputContainer.createEl('button', {
+    const addGroupButton = parent.createEl('button', {
       text: 'Add Group',
       cls: [c('add-button')]
     });

@@ -1,21 +1,11 @@
 .auto-class-settings {
-  /* Add new input */
-  &__input-container {
-    display: flex;
-    align-items: center;
-    input {
-      flex-grow: 1;
-    }
-    margin-bottom: 8px;
+  &__inputs-wrapper {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
   }
-  &__folder-button,
-  &__path-button {
-    margin-left: 0;
-    margin-right: 8px;
-  }
-  &__add-button {
-    margin-left: 8px;
-    margin-right: 0;
+  &__add-group-input {
+    grid-column: span 2;
   }
 
   /* Rule list */

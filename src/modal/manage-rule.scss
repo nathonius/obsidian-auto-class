@@ -2,6 +2,7 @@
   &__modal {
     min-width: 50vw;
   }
+
   &__input-container {
     padding: 8px 0;
     label {
@@ -11,23 +12,17 @@
   }
   &__rule-input-wrapper {
     display: flex;
+    gap: 8px;
     input {
       flex-grow: 1;
     }
-  }
-  &__rule-input-button {
-    margin-left: 0;
-    margin-right: 8px;
   }
   &__class-input-wrapper {
     display: flex;
     align-items: center;
+    gap: 8px;
     input {
       flex-grow: 1;
-    }
-    button {
-      margin-left: 12px;
-      margin-right: 0;
     }
   }
   &__class-list {
@@ -51,8 +46,6 @@
   &__controls {
     display: flex;
     justify-content: flex-end;
-    button:nth-child(2) {
-      margin: 0;
-    }
+    gap: 8px;
   }
 }
