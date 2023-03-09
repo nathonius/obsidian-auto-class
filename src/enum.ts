@@ -4,6 +4,6 @@ export enum RuleScope {
 }
 
 export enum RuleTargetType {
-  Path,
-  Tag
+  Path = 'Path',
+  Tag = 'Tag'
 }

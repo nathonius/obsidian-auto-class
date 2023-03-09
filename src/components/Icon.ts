@@ -3,8 +3,11 @@ import { FunctionComponent } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { html } from '../util';
 
-export const Icon: FunctionComponent<{ icon: string; tooltip?: string }> = (props) => {
-  const { icon, tooltip } = props;
+export const Icon: FunctionComponent<unknown & { icon: string; tooltip?: string; class?: string }> = (props) => {
+  const { icon, tooltip, ...restProps } = props;
+  const className = [restProps['class'], 'auto-class-icon'].join(' ');
+  delete restProps['class'];
+
   const host = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -15,5 +18,5 @@ export const Icon: FunctionComponent<{ icon: string; tooltip?: string }> = (prop
 
   const spanProps = tooltip ? { 'aria-label': tooltip } : {};
 
-  return html`<span ref=${host} ...${spanProps}></span>`;
+  return html`<span ref=${host} class=${className} ...${restProps} ...${spanProps}></span>`;
 };

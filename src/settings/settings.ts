@@ -7,12 +7,15 @@ import { AutoClassPluginSettings, AutoClassRule, AutoClassRuleGroup, RuleScopeSe
 import { AutoClassPlugin } from '../plugin';
 import { ConfirmModal } from '../modal/confirm';
 import { EditNameModal } from '../modal/edit-name';
-import { className, isRuleGroup } from '../util';
+import { className, html, isRuleGroup } from '../util';
+import { FunctionComponent, render } from 'preact';
+import { IconButton } from '../components/IconButton';
+import { useCallback, useState } from 'preact/hooks';
 
 const c = className('auto-class-settings');
 
 export class AutoClassPluginSettingsTab extends PluginSettingTab {
-  private readonly folderSuggestModal: SuggestModal = new SuggestModal(this.app);
+  private readonly suggestModal: SuggestModal = new SuggestModal(this.app);
   private readonly manageRuleModal: ManageRuleModal = new ManageRuleModal(this.plugin);
   private readonly confirmModal: ConfirmModal = new ConfirmModal(this.app);
   private readonly editNameModal: EditNameModal = new EditNameModal(this.app);
@@ -27,17 +30,14 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
   display(): void {
     this.containerEl.empty();
 
-    // Render title and description
-    this.containerEl.createEl('h2', { text: 'Auto Class settings.' });
-
-    this.containerEl.createEl('p', {
-      text: 'Add a folder path or tag and edit it to add CSS classes. Classes are added to the markdown view container in the appropriate scope (edit/source mode, preview mode, or both). Paths and tags can be grouped for organization.'
-    });
-
-    const inputsWrapper = this.containerEl.createDiv({ cls: c('inputs-wrapper') });
-    this.renderPathInput(inputsWrapper);
-    this.renderTagInput(inputsWrapper);
-    this.renderGroupInput(inputsWrapper);
+    render(
+      html`<${AutoClassSettingsTab}
+        addRule=${this.addRule.bind(this)}
+        addGroup=${this.addGroup.bind(this)}
+        suggestModal=${this.suggestModal}
+      />`,
+      this.containerEl
+    );
     this.containerEl.createEl('h3', { text: 'Paths & Tags' });
     this.renderPathList(this.containerEl, this.plugin.settings);
     this.containerEl.createEl('h3', { text: 'Advanced' });
@@ -416,22 +416,22 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
    */
   private handleFolderButton(input: HTMLInputElement): void {
     const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
-    this.folderSuggestModal.selectedItem = null;
-    this.folderSuggestModal.items = folders;
-    this.folderSuggestModal.callback = (folder: TFolder) => {
+    this.suggestModal.selectedItem = null;
+    this.suggestModal.items = folders;
+    this.suggestModal.callback = (folder: TFolder) => {
       input.value = folder.path;
     };
-    this.folderSuggestModal.open();
+    this.suggestModal.open();
   }
 
   private handleTagButton(input: HTMLInputElement): void {
     const tags: string[] = Object.keys((this.app.metadataCache as any).getTags());
-    this.folderSuggestModal.selectedItem = null;
-    this.folderSuggestModal.items = tags;
-    this.folderSuggestModal.callback = (tag: string) => {
+    this.suggestModal.selectedItem = null;
+    this.suggestModal.items = tags;
+    this.suggestModal.callback = (tag: string) => {
       input.value = tag;
     };
-    this.folderSuggestModal.open();
+    this.suggestModal.open();
   }
 
   /**
@@ -511,3 +511,150 @@ export class AutoClassPluginSettingsTab extends PluginSettingTab {
     return enabledScopes.join(', ');
   }
 }
+
+interface AutoClassSettingsTabProps {
+  addRule: (rule: AutoClassRule) => Promise<void>;
+  addGroup: (name: string) => Promise<void>;
+  suggestModal: SuggestModal;
+}
+
+const AutoClassSettingsTab: FunctionComponent<AutoClassSettingsTabProps> = (props) => {
+  const { addRule, addGroup, suggestModal } = props;
+  const [path, setPath] = useState<string>('');
+  const [tag, setTag] = useState<string>('');
+  const [group, setGroup] = useState<string>('');
+  const handleSelectButton = useCallback(
+    (event: MouseEvent) => {
+      const target = event.target as HTMLButtonElement;
+      const targetType = target.dataset['target'] as RuleTargetType;
+      suggestModal.setItems(targetType);
+      switch (targetType) {
+        case RuleTargetType.Path:
+          suggestModal.callback = (selectedFolder: TFolder) => {
+            setPath(selectedFolder.path);
+          };
+          break;
+        case RuleTargetType.Tag:
+          suggestModal.callback = (selectedTag: string) => {
+            setTag(selectedTag);
+          };
+          break;
+      }
+      suggestModal.open();
+    },
+    [suggestModal, setPath, setTag]
+  );
+
+  const handleAddButton = useCallback(
+    (event: MouseEvent | KeyboardEvent) => {
+      const target = event.target as HTMLButtonElement;
+      const targetType = target.dataset['target'] as RuleTargetType | 'Group';
+      switch (targetType) {
+        case RuleTargetType.Path:
+          addRule({
+            name: path,
+            target: path,
+            targetType: RuleTargetType.Path,
+            scope: { Read: true, Edit: false },
+            classes: []
+          });
+          setPath('');
+          break;
+        case RuleTargetType.Tag:
+          addRule({
+            name: tag,
+            target: tag,
+            targetType: RuleTargetType.Tag,
+            scope: { Read: true, Edit: false },
+            classes: []
+          });
+          setTag('');
+          break;
+        case 'Group':
+          addGroup(group);
+          setGroup('');
+          break;
+      }
+    },
+    [tag, path, addRule, addGroup, setPath, setTag, setGroup]
+  );
+
+  const handleEnter = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        handleAddButton(event);
+      }
+    },
+    [handleAddButton]
+  );
+
+  const handleChange = useCallback(
+    (event: KeyboardEvent) => {
+      const target = event.target as HTMLButtonElement;
+      const targetType = target.dataset['target'] as RuleTargetType | 'Group';
+      switch (targetType) {
+        case RuleTargetType.Path:
+          return setPath(target.value);
+        case RuleTargetType.Tag:
+          return setTag(target.value);
+        case 'Group':
+          return setGroup(target.value);
+      }
+    },
+    [setPath, setTag, setGroup]
+  );
+
+  return html`
+    <h2>Auto Class settings.</h2>
+    <p>
+      Add a folder path or tag and edit it to add CSS classes. Classes are added to the markdown view container in the
+      appropriate scope (edit/source mode, preview mode, or both). Paths and tags can be grouped for organization.
+    </p>
+    <div class=${c('inputs-wrapper')}>
+      <${IconButton}
+        class=${c('folder-button')}
+        icon="folder"
+        onClick=${handleSelectButton}
+        data-target=${RuleTargetType.Path}
+      />
+      <input
+        placeholder="Folder"
+        type="text"
+        onKeyUp=${handleEnter}
+        onChange=${handleChange}
+        value=${path}
+        data-target=${RuleTargetType.Path}
+      />
+      <button class="${c('add-button')} mod-cta" onClick=${handleAddButton} data-target=${RuleTargetType.Path}>
+        Add Path
+      </button>
+      <${IconButton}
+        class=${c('path-button')}
+        icon="hashtag"
+        onClick=${handleSelectButton}
+        data-target=${RuleTargetType.Tag}
+      />
+      <input
+        placeholder="#Tag"
+        type="text"
+        onKeyUp=${handleEnter}
+        onChange=${handleChange}
+        value=${tag}
+        data-target=${RuleTargetType.Tag}
+      />
+      <button class="${c('add-button')} mod-cta" onClick=${handleAddButton} data-target=${RuleTargetType.Tag}>
+        Add Tag
+      </button>
+      <input
+        class=${c('add-group-input')}
+        placeholder="Group name"
+        type="text"
+        onKeyUp=${handleEnter}
+        onChange=${handleChange}
+        value=${group}
+        data-target="Group"
+      />
+      <button class="${c('add-button')} mod-cta" onClick=${handleAddButton} data-target="Group">Add Group</button>
+    </div>
+  `;
+};

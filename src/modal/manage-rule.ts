@@ -1,4 +1,4 @@
-import { App, Modal, TFolder } from 'obsidian';
+import { Modal, TFolder } from 'obsidian';
 import { RuleScope, RuleTargetType } from '../enum';
 import { AutoClassRule, AutoClassRuleGroup } from '../interfaces';
 import { className, getClassList, html } from '../util';
@@ -14,6 +14,7 @@ export class ManageRuleModal extends Modal {
   rule: AutoClassRule | null = null;
   group: AutoClassRuleGroup | null = null;
   save: (original: AutoClassRule, updated: AutoClassRule, group: AutoClassRuleGroup | null) => Promise<void>;
+  private readonly suggestModal = new SuggestModal(this.app);
 
   constructor(plugin: AutoClassPlugin) {
     super(plugin.app);
@@ -28,7 +29,7 @@ export class ManageRuleModal extends Modal {
         group=${this.group}
         save=${this.save.bind(this)}
         close=${this.close.bind(this)}
-        app=${this.app}
+        suggestModal=${this.suggestModal}
       />`,
       this.contentEl
     );
@@ -40,10 +41,9 @@ const ModalContent: FunctionComponent<{
   group: AutoClassRuleGroup | null;
   save: (original: AutoClassRule, updated: AutoClassRule, group: AutoClassRuleGroup | null) => Promise<void>;
   close: () => void;
-  app: App;
+  suggestModal: SuggestModal;
 }> = (props) => {
-  const { rule, group, save, app, close } = props;
-  const [suggestModal] = useState<SuggestModal>(new SuggestModal(app));
+  const { rule, group, save, suggestModal, close } = props;
   const [updatedRule, setUpdatedRule] = useState<AutoClassRule>(rule);
   const scopeValue = useMemo(() => {
     if (updatedRule.scope.Edit && updatedRule.scope.Read) {
@@ -55,8 +55,6 @@ const ModalContent: FunctionComponent<{
     }
   }, [updatedRule]);
   const [classValue, setClassValue] = useState<string>();
-  const [folders, setFolders] = useState<TFolder[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
   const isPath = useMemo(() => rule.targetType === RuleTargetType.Path, [rule]);
 
   const addClasses = useCallback(
@@ -74,13 +72,12 @@ const ModalContent: FunctionComponent<{
   }, []);
 
   const handleRuleButton = useCallback(() => {
-    suggestModal.selectedItem = null;
-    suggestModal.items = isPath ? folders : tags;
+    suggestModal.setItems(rule.targetType);
     suggestModal.callback = (value: TFolder | string) => {
       setUpdatedRule({ ...updatedRule, target: isPath ? (value as TFolder).path : (value as string) });
     };
     suggestModal.open();
-  }, [rule, folders, tags, suggestModal]);
+  }, [rule, suggestModal]);
 
   const handleScopeChange = useCallback(
     (event: KeyboardEvent) => {
@@ -134,15 +131,6 @@ const ModalContent: FunctionComponent<{
   // Reset updated rule when original rule changes
   useEffect(() => {
     setUpdatedRule(rule);
-  }, [rule]);
-
-  // Get folders / tags for the current rule
-  useEffect(() => {
-    if (isPath) {
-      setFolders(app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[]);
-    } else {
-      setTags(Object.keys((app.metadataCache as any).getTags()));
-    }
   }, [rule]);
 
   return html`
