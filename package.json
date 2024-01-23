@@ -10,12 +10,12 @@
   },
   "keywords": [],
   "author": {
-    "name": "OfficerHalf",
+    "name": "Nathonius",
     "url": "https://nathan-smith.org/"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/OfficerHalf/obsidian-auto-class/"
+    "url": "https://github.com/nathonius/obsidian-auto-class/"
   },
   "license": "MIT",
   "devDependencies": {
