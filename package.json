@@ -41,6 +41,6 @@
   },
   "dependencies": {
     "minimatch": "^6.1.6",
-    "sortablejs": "^1.14.0"
+    "sortablejs": "^1.15.1"
   }
 }
