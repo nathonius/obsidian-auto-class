@@ -1,9 +1,12 @@
-import { MarkdownView } from 'obsidian';
 import { ClassMatchScope } from './enum';
+import { MarkdownView } from 'obsidian';
 
 export interface AutoClassPluginSettings {
   matches: Array<ClassPath | ClassTag | ClassGroup>;
   version: string;
+  usePathGlob: boolean;
+  writeToYAML: boolean;
+  yamlAttribute: string;
 }
 
 export interface ClassGroup {

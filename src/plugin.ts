@@ -1,10 +1,11 @@
-import { getAllTags, MarkdownView, Plugin } from 'obsidian';
-import { DEFAULT_SETTINGS } from './constants';
-import { ClassMatchScope } from './enum';
 import { AutoClassPluginSettings, ClassPath, ClassTag } from './interfaces';
-import { migrate } from './migrations';
-import { AutoClassPluginSettingsTab } from './settings/settings';
+import { MarkdownView, Plugin, getAllTags } from 'obsidian';
 import { isClassGroup, isClassPath, isClassTag, matchPathGlob } from './util';
+
+import { AutoClassPluginSettingsTab } from './settings/settings';
+import { ClassMatchScope } from './enum';
+import { DEFAULT_SETTINGS } from './constants';
+import { migrate } from './migrations';
 
 export class AutoClassPlugin extends Plugin {
   appliedClasses = new WeakMap<MarkdownView, string[]>();
@@ -40,17 +41,13 @@ export class AutoClassPlugin extends Plugin {
     // Remove and apply classes for each applicable view
     activeViews.forEach((view) => {
       this.removePreviousClasses(view);
-      let matches: Array<ClassPath | ClassTag> = [];
-      let container: Element;
-      if (this.isReadMode(view)) {
-        matches = this.getMatches(view, allClasses, ClassMatchScope.Read);
-        container = this.getPreviewContainer(view);
-      } else if (this.isEditMode(view)) {
-        matches = this.getMatches(view, allClasses, ClassMatchScope.Edit);
-        container = this.getEditContainer(view);
-      }
+      const [getContainer, scope] = this.isReadMode(view)
+        ? [this.getPreviewContainer, ClassMatchScope.Read]
+        : [this.getEditContainer, ClassMatchScope.Edit];
+
+      const matches = this.getMatches(view, allClasses, scope);
       const classes: string[] = matches.flatMap((match) => match.classes);
-      this.applyClasses(classes, view, container);
+      this.applyClasses(classes, view, getContainer(view));
     });
   }
 
@@ -127,8 +124,14 @@ export class AutoClassPlugin extends Plugin {
    * they were added to for removal later.
    */
   private applyClasses(classes: string[], view: MarkdownView, container: Element): void {
-    container.addClasses(classes);
     this.appliedClasses.set(view, classes);
+    if (!classes?.length) return;
+    if (this.settings.writeToYAML)
+      this.app.fileManager.processFrontMatter(view.file, (fm) => {
+        fm[this.settings.yamlAttribute] = [...new Set([...classes, ...(fm[this.settings.yamlAttribute] || [])])];
+        return;
+      });
+    container.addClasses(classes);
   }
 
   /**
@@ -139,13 +142,21 @@ export class AutoClassPlugin extends Plugin {
     const previewContainer = this.getPreviewContainer(view);
     const editContainer = this.getEditContainer(view);
     const classes = this.appliedClasses.get(view);
+    this.appliedClasses.delete(view);
+    if (!classes?.length) return;
+    if (this.settings.writeToYAML)
+      this.app.fileManager.processFrontMatter(view.file, (fm) => {
+        const filtered = fm[this.settings.yamlAttribute]?.filter((c: string) => !classes.includes(c));
+        if (filtered?.length) fm[this.settings.yamlAttribute] = filtered;
+        else delete fm[this.settings.yamlAttribute];
+        return;
+      });
     if (classes && previewContainer) {
       previewContainer.removeClasses(classes);
     }
     if (classes && editContainer) {
       editContainer.removeClasses(classes);
     }
-    this.appliedClasses.delete(view);
   }
 
   /**
