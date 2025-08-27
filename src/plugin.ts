@@ -127,7 +127,7 @@ export class AutoClassPlugin extends Plugin {
    * they were added to for removal later.
    */
   private applyClasses(classes: string[], view: MarkdownView, container: Element): void {
-    container.addClasses(classes);
+    container?.addClasses(classes);
     this.appliedClasses.set(view, classes);
   }
 
